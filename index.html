@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}</style>
+<title>De Slimste Dieuwke</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout: quiz-studio sfeer (donker met amber gloed, geïnspireerd op De Slimste Mens) — speelveld links, scorebord rechts. Bewust één donkere look. */
+:root{
+  --turf:#9a0000; --turf-deep:#6e0000; --chalk:#ffffff; --chalk-dim:#f7c9a8;
+  --ball:#f7d10f; --pink:#f7d10f; --good:#3ddc97; --line:rgba(255,255,255,.22);
+  --blue:#7a0000; --blue-deep:#5a0000; --red:#bc202e;
+  --g1:#f7d10f; --g2:#bc202e; --g3:#ffffff;
+  --display:"Bowlby One", Impact, "Arial Black", sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--turf-deep);color:var(--chalk);font-family:var(--body);font-size:16px;line-height:1.45;
+  background-image:radial-gradient(ellipse 80% 60% at 50% 40%, #a80404, var(--turf-deep) 100%);background-attachment:fixed;}
+.wrap{max-width:1280px;margin:0 auto;padding-inline:16px;padding-block:16px 32px;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--display);font-weight:400;transform:skewY(-3deg);font-size:clamp(28px,4.5vw,44px);line-height:.9;text-transform:uppercase;letter-spacing:.01em}
+.logo span{color:var(--ball)}
+.logo small{display:block;font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:.14em;color:var(--chalk-dim);margin-top:6px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--ball);outline-offset:2px}
+.btn{padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:700;border:1px solid var(--line);transition:background .15s}
+.btn:hover{background:rgba(255,255,255,.18)}
+.btn.primary{background:var(--ball);color:#3a0000;border-color:var(--ball)}
+.btn.good{background:var(--good);color:#04291a;border-color:var(--good)}
+.btn.bad{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.sm{padding:6px 12px;font-size:14px}
+.btn[aria-pressed="true"]{background:var(--chalk);color:var(--turf)}
+
+.game{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+@media (max-width:860px){.game{grid-template-columns:1fr}}
+
+.rounds{display:flex;gap:6px;flex-wrap:wrap}
+.stage{background:var(--blue);border:1px solid var(--line);border-radius:20px;padding:clamp(16px,3vw,32px);display:flex;flex-direction:column;gap:20px;min-height:420px;min-width:0}
+.eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--chalk-dim);font-weight:700}
+.question{font-family:var(--display);font-weight:400;font-size:clamp(28px,4vw,48px);line-height:1.05;text-wrap:balance}
+.answer{font-size:clamp(20px,2.4vw,28px);font-weight:700;color:var(--ball)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;border:1px solid var(--line);color:var(--chalk-dim);font-variant-numeric:tabular-nums}
+.dot.x3{border-color:var(--ball);color:var(--ball)}
+.dot.cur{background:var(--ball);color:var(--turf);border-color:var(--chalk)}
+.dot.done{opacity:.4}
+
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.chip{padding:14px 16px;border-radius:14px;border:1px dashed var(--line);text-align:left;font-weight:700;font-size:18px;min-height:58px;display:flex;align-items:center;gap:10px;transition:transform .12s, background .2s}
+.chip:hover{transform:translateY(-1px);background:rgba(255,255,255,.06)}
+.chip .n{font-family:var(--display);font-size:20px;color:var(--chalk-dim);min-width:22px}
+.chip .t{color:transparent;text-shadow:0 0 12px rgba(244,247,255,.55);user-select:none}
+.chip.peek .t{color:var(--chalk-dim);text-shadow:none}
+.chip.found{border-style:solid;border-color:var(--ball);background:rgba(247,209,15,.16)}
+.chip.found .t{color:var(--chalk);text-shadow:none}
+.chip .pts{margin-left:auto;font-size:13px;color:var(--ball);font-variant-numeric:tabular-nums}
+
+.grid12{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.grid12{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{padding:18px 8px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid var(--line);text-align:center;font-weight:700;font-size:clamp(15px,1.8vw,20px);overflow-wrap:anywhere}
+.tile.g0{background:var(--g1);color:#3a0000;border-color:var(--g1)}
+.tile.g1{background:var(--g2);color:#ffffff;border-color:var(--g2)}
+.tile.g2{background:var(--g3);color:var(--turf);border-color:var(--g3)}
+.conn{display:flex;gap:8px;flex-wrap:wrap}
+.conn .chip{min-height:0;font-size:16px;flex:1 1 200px}
+.conn .chip.found.g0{border-color:var(--g1)} .conn .chip.found.g1{border-color:var(--g2)} .conn .chip.found.g2{border-color:var(--g3)}
+
+.photo{max-width:100%;max-height:340px;border-radius:14px;border:1px solid var(--line);object-fit:contain;align-self:flex-start}
+.upload{font-size:14px;color:var(--chalk-dim)}
+.upload input{font-size:14px;max-width:100%}
+
+/* scorebord */
+.board{display:flex;flex-direction:column;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.team{background:var(--blue);border:2px solid var(--line);border-radius:18px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;text-align:left;width:100%}
+.team.active{border-color:var(--ball);box-shadow:0 0 0 4px rgba(247,209,15,.3)}
+.team .nm{font-weight:700;font-size:17px;min-width:0;overflow-wrap:anywhere}
+.team .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ball);font-weight:700}
+.team .sec{font-family:var(--display);font-weight:400;font-size:48px;line-height:.9;font-variant-numeric:tabular-nums;grid-row:1 / span 2;grid-column:2;color:var(--chalk)}
+.team.low .sec{color:var(--pink)}
+.team .adj{grid-column:1 / -1;display:flex;gap:6px;margin-top:6px}
+.clock{display:flex;gap:8px}
+.clock .btn{flex:1}
+.hint{font-size:13px;color:var(--chalk-dim)}
+
+/* shotje */
+.shot{position:fixed;inset:0;background:rgba(247,209,15,.96);display:grid;place-items:center;text-align:center;z-index:10;padding:24px}
+.shot h2{font-family:var(--display);font-weight:400;font-size:clamp(72px,16vw,180px);line-height:.85;margin:0;color:var(--turf);text-transform:uppercase}
+.shot p{font-size:22px;font-weight:700;color:var(--turf);margin:12px 0 24px}
+@media (prefers-reduced-motion:no-preference){.shot h2{animation:bump .5s ease-out 3}}
+@keyframes bump{50%{transform:scale(1.08) rotate(-2deg)}}
+
+/* editor */
+.editor{background:var(--blue);border:1px solid var(--line);border-radius:20px;padding:clamp(16px,3vw,28px);display:flex;flex-direction:column;gap:20px}
+.editor h2{font-family:var(--display);font-weight:400;font-size:30px;margin:0;text-transform:uppercase}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:700}
+.field .fmt{font-size:13px;color:var(--chalk-dim)}
+.field code{background:rgba(255,255,255,.1);padding:1px 6px;border-radius:6px;font-size:12.5px}
+textarea,input[type=number]{font:14px/1.5 ui-monospace, "SF Mono", Menlo, monospace;color:var(--chalk);background:var(--blue-deep);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
+textarea{min-height:140px;resize:vertical}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.note{background:rgba(247,209,15,.14);border:1px solid rgba(247,209,15,.5);border-radius:12px;padding:10px 14px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--ball);color:var(--turf);padding:10px 18px;border-radius:999px;font-weight:700;z-index:20}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="logo">De Slimste <span>Dieuwke</span><small>21 JAAR · DINER-EDITIE</small></div>
+    <div class="tabs">
+      <button class="btn" id="tabPlay" aria-pressed="true">Spelen</button>
+      <button class="btn" id="tabEdit" aria-pressed="false">Vragen bewerken</button>
+    </div>
+  </header>
+
+  <section id="viewPlay" class="game">
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <nav class="rounds" id="rounds"></nav>
+      <div class="stage" id="stage"></div>
+    </div>
+    <aside class="board">
+      <div id="teams" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="clock">
+        <button class="btn primary" id="clockBtn">Start klok</button>
+        <button class="btn" id="nextTeam">Volgend team</button>
+      </div>
+      <p class="hint">Spatiebalk = klok start/stop. Klik een team om het aan de beurt te zetten. Op 0 seconden: shotje.</p>
+    </aside>
+  </section>
+
+  <section id="viewEdit" class="editor" hidden>
+    <h2>Vragen bewerken</h2>
+    <p class="note">Alles met <b>[invullen]</b> is een plek voor jullie eigen weetjes over Dieuwke. De rest zijn voorbeeldvragen die je mag houden of vervangen. Het wordt opgeslagen in deze browser, gebruik dus op de avond dezelfde laptop.</p>
+    <div class="cols">
+      <div class="field"><label for="fTeams">Teams (één per regel)</label><textarea id="fTeams" style="min-height:100px"></textarea></div>
+      <div class="field"><label for="fStart">Startseconden per team</label><input type="number" id="fStart" min="10" max="300" step="5"><span class="fmt">In het tv-programma is dit 60.</span></div>
+    </div>
+    <div class="cols" id="roundFields"></div>
+    <div class="row">
+      <button class="btn primary" id="saveBtn">Opslaan en spelen</button>
+      <button class="btn" id="resetScores">Scores en rondes resetten</button>
+      <span class="spacer"></span>
+      <button class="btn bad sm" id="restoreBtn">Voorbeeldvragen terugzetten</button>
+    </div>
+    <p class="hint" id="restoreConfirm" hidden>Weet je het zeker? Je eigen vragen worden overschreven. <button class="btn bad sm" id="restoreYes">Ja, terugzetten</button> <button class="btn sm" id="restoreNo">Annuleren</button></p>
+  </section>
+</div>
+
+<div class="shot" id="shot" hidden>
+  <div><h2>Shotje!</h2><p id="shotWho"></p><button class="btn" style="background:var(--turf);color:#fff" id="shotOk">Proost, verder</button></div>
+</div>
+
+<script>
+const ROUNDS=[
+  {id:'r369',name:'3-6-9',type:'369',fmt:'Eén vraag per regel: <code>vraag | antwoord</code>. Bij vraag 3, 6, 9, 12 en 15 levert een goed antwoord 10 seconden op.'},
+  {id:'od',name:'Open Deur',type:'items',pts:()=>20,fmt:'Per regel: <code>vraag | antw1; antw2; antw3; antw4</code>. Elk gevonden antwoord: 20 seconden.'},
+  {id:'pz',name:'Puzzel',type:'puzzel',fmt:'Per regel één verband: <code>verband: woord, woord, woord, woord</code>. 3 regels = 1 puzzel. Lege regel tussen puzzels. Elk verband: 30 seconden.'},
+  {id:'il',name:'Ingelijst',type:'items',pts:()=>10,fmt:'Per regel: <code>onderwerp | antw1; antw2; …</code> (tot 10). Elk antwoord: 10 seconden.'},
+  {id:'cg',name:'Collectief Geheugen',type:'items',pts:(n)=>(n+1)*10,photo:true,fmt:'Per regel: <code>omschrijving | trefwoord; trefwoord; …</code> (5 stuks). Eerste vondst 10 s, dan 20, 30, 40, 50. Foto toevoegen kan tijdens het spelen.'},
+  {id:'fi',name:'Finale',type:'finale',fmt:'Per regel: <code>vraag | antw1; …; antw5</code>. Elk gevonden antwoord haalt 20 seconden af bij de andere teams.'}
+];
+const DEFAULT={
+  teams:'Team Stick\nTeam Karaoke\nTeam Kater',
+  start:60,
+  r369:`Hoeveel spelers staan er per team op het veld bij hockey? | 11 (inclusief keeper)
+Op welke datum is Dieuwke jarig? | [invullen]
+Met welke kant van de stick mag je de bal spelen? | Alleen met de platte kant
+Welk nummer zingt Dieuwke altijd keihard mee? | [invullen]
+In welk land mag je pas vanaf 21 jaar alcohol drinken? | Verenigde Staten
+Hoe heet de hockeyclub van Dieuwke? | [invullen]
+Welk land won goud bij de vrouwen op het Olympisch hockeytoernooi van 2024? | Nederland
+Wat is Dieuwke's vaste drankje op een feest? | [invullen]
+Waar bestaat een kopstootje uit? | Een biertje en een jenevertje
+Op welke positie speelt Dieuwke? | [invullen]
+Uit hoeveel kwarten bestaat een hockeywedstrijd? | 4 kwarten van 15 minuten
+Van welke artiest is Dieuwke stiekem fan, maar geeft ze dat nooit toe? | [invullen]
+Hoe heet het gebied waarbinnen je moet staan om te mogen scoren? | De cirkel (slagcirkel)
+Om welk moment moet Dieuwke nu nog steeds keihard lachen? | [invullen]
+In welk jaar is Dieuwke geboren? | 2005`,
+  od:`Wat moet je weten over Dieuwke op de hockeyclub? | [invullen]; [invullen]; [invullen]; [invullen]
+Hoe merk je dat Dieuwke een paar drankjes op heeft? | Ze begint te zingen; [invullen]; [invullen]; [invullen]
+Waarom moet je met Dieuwke op vakantie? | [invullen]; [invullen]; [invullen]; [invullen]`,
+  pz:`Hockey: Stick, Cirkel, Strafcorner, Scheenbeschermer
+Karaoke: Microfoon, Refrein, Valse noot, Duet
+Een avond stappen met Dieuwke: Kater, Shotje, Kopstootje, Afterparty`,
+  il:`Nederlandse meezingers die op elk feest voorbijkomen | Zij gelooft in mij; Het is een nacht; Mag ik dan bij jou; Zoutelande; Avond; Bloed, zweet en tranen; Ik leef niet meer voor jou; Pastorale; Viva Hollandia; Brabant
+Dingen in een hockeytas | Stick; Bal; Scheenbeschermers; Bitje; Kousen; Hockeyschoenen; Handschoen; Waterfles; Tape; Clubshirt`,
+  cg:`Dieuwke's vorige verjaardag | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Het gezelligste hockeyfeest | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Een avond karaoke met de vriendengroep | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
+  fi:`Noem 5 dingen waar Dieuwke blij van wordt | Hockey; Zingen; Feesten; Lachen; [invullen]
+Noem 5 drankspelletjes | Beerpong; Kingsen; Mexen; Ik heb nog nooit; Flip cup
+Noem 5 posities of rollen in een hockeyteam | Keeper; Verdediger; Middenvelder; Spits; Aanvoerder
+Wat zegt Dieuwke als ze aangeschoten is? | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`
+};
+const KEY='slimste-dieuwke-v1';
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.data)return s}catch(e){}return null}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369}}))}catch(e){}}
+
+const saved=load();
+let data=saved?saved.data:{...DEFAULT};
+const photos={};
+let G;
+function freshGame(){
+  const names=data.teams.split('\n').map(s=>s.trim()).filter(Boolean);
+  return {teams:(names.length?names:['Team 1','Team 2']).map(n=>({name:n,sec:+data.start||60})),active:0,round:0,q:{},found:{},q369:{idx:0,done:[]},running:false};
+}
+G=freshGame();
+if(saved&&saved.game&&saved.game.teams){Object.assign(G,saved.game);G.running=false}
+
+/* parsers */
+const lines=t=>(t||'').split('\n').map(s=>s.trim()).filter(Boolean);
+function parseQA(t){return lines(t).map(l=>{const i=l.indexOf('|');return i<0?{q:l,a:''}:{q:l.slice(0,i).trim(),a:l.slice(i+1).trim()}})}
+function parseItems(t){return parseQA(t).map(x=>({q:x.q,answers:x.a.split(';').map(s=>s.trim()).filter(Boolean)}))}
+function parsePuzzels(t){
+  return (t||'').split(/\n\s*\n/).map(b=>lines(b).map(l=>{const i=l.indexOf(':');return {name:i<0?l:l.slice(0,i).trim(),words:(i<0?'':l.slice(i+1)).split(',').map(s=>s.trim()).filter(Boolean)}})).filter(p=>p.length);
+}
+function shuffled(arr,seed){const a=arr.slice();let s=seed*9301+49297;for(let i=a.length-1;i>0;i--){s=(s*9301+49297)%233280;const j=Math.floor(s/233280*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+const $=id=>document.getElementById(id);
+const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+
+/* scoring */
+function addSec(ti,d){G.teams[ti].sec=Math.max(0,G.teams[ti].sec+d)}
+function toggleFound(key,apply,undo){
+  if(G.found[key]){undo(G.found[key]);delete G.found[key]}
+  else{G.found[key]=apply()}
+  persist();render();
+}
+
+/* rendering */
+function renderRounds(){
+  const nav=$('rounds');nav.innerHTML='';
+  ROUNDS.forEach((r,i)=>{const b=el('button','btn sm',r.name);b.setAttribute('aria-pressed',i===G.round);b.onclick=()=>{G.round=i;stopClock();persist();render()};nav.append(b)});
+}
+function renderTeams(){
+  const box=$('teams');box.innerHTML='';
+  G.teams.forEach((t,i)=>{
+    const c=el('div','team'+(i===G.active?' active':'')+(t.sec<=15?' low':''));
+    c.setAttribute('role','button');c.tabIndex=0;
+    c.onclick=e=>{if(e.target.closest('.adj'))return;G.active=i;persist();render()};
+    c.onkeydown=e=>{if(e.key==='Enter'){G.active=i;persist();render()}};
+    const nm=el('div','nm',t.name);
+    const tag=el('div','tag',i===G.active?(G.running?'● klok loopt':'aan de beurt'):'');
+    const sec=el('div','sec',t.sec);
+    const adj=el('div','adj');
+    [[-10,'−10'],[-1,'−1'],[1,'+1'],[10,'+10']].forEach(([d,l])=>{const b=el('button','btn sm',l);b.onclick=()=>{addSec(i,d);persist();renderTeams()};adj.append(b)});
+    c.append(nm,sec,tag,adj);box.append(c);
+  });
+  $('clockBtn').textContent=G.running?'Stop klok':'Start klok';
+}
+function nav(r,count){
+  const row=el('div','row');
+  const cur=G.q[r.id]||0;
+  const prev=el('button','btn sm','← Vorige');prev.disabled=cur===0;prev.style.opacity=cur===0?.4:1;
+  prev.onclick=()=>{G.q[r.id]=cur-1;stopClock();persist();render()};
+  const next=el('button','btn sm','Volgende →');next.disabled=cur>=count-1;next.style.opacity=cur>=count-1?.4:1;
+  next.onclick=()=>{G.q[r.id]=cur+1;stopClock();persist();render()};
+  row.append(el('span','eyebrow',`${r.name} · ${count?cur+1:0} van ${count}`),el('span','spacer'),prev,next);
+  return row;
+}
+function render369(stage,r){
+  const qs=parseQA(data.r369);const s=G.q369;
+  const dots=el('div','dots');
+  qs.forEach((_,i)=>{const d=el('div','dot'+((i+1)%3===0?' x3':'')+(i===s.idx?' cur':'')+(s.done.includes(i)?' done':''),i+1);dots.append(d)});
+  stage.append(el('div','eyebrow',`3-6-9 · vraag ${Math.min(s.idx+1,qs.length)} van ${qs.length} · ${G.teams[G.active].name} is aan de beurt`),dots);
+  if(s.idx>=qs.length){stage.append(el('div','question','Ronde klaar! Door naar Open Deur.'));const b=el('button','btn sm','Ronde opnieuw');b.onclick=()=>{G.q369={idx:0,done:[]};persist();render()};stage.append(b);return}
+  const q=qs[s.idx];const bonus=(s.idx+1)%3===0;
+  stage.append(el('div','question',q.q));
+  const ans=el('div','answer',q.a);ans.hidden=!s.show;stage.append(ans);
+  if(bonus)stage.append(el('div','eyebrow','Goed antwoord op deze vraag = +10 seconden'));
+  const row=el('div','row');
+  const show=el('button','btn',s.show?'Verberg antwoord':'Toon antwoord');show.onclick=()=>{s.show=!s.show;persist();render()};
+  const good=el('button','btn good','Goed');good.onclick=()=>{if(bonus)addSec(G.active,10);s.done.push(s.idx);s.idx++;s.show=false;persist();render()};
+  const bad=el('button','btn bad','Fout, volgend team');bad.onclick=()=>{G.active=(G.active+1)%G.teams.length;s.show=false;persist();render()};
+  const skip=el('button','btn sm','Niemand wist het, volgende vraag');skip.onclick=()=>{s.done.push(s.idx);s.idx++;s.show=false;G.active=(G.active+1)%G.teams.length;persist();render()};
+  row.append(show,good,bad,el('span','spacer'),skip);stage.append(row);
+}
+function renderItems(stage,r){
+  const qs=r.type==='finale'?parseItems(data.fi):parseItems(data[r.id]);
+  stage.append(nav(r,qs.length));
+  if(!qs.length){stage.append(el('p','hint','Nog geen vragen voor deze ronde. Voeg ze toe via Vragen bewerken.'));return}
+  const qi=Math.min(G.q[r.id]||0,qs.length-1);const q=qs[qi];
+  stage.append(el('div','question',q.q));
+  if(r.photo){
+    const pk=r.id+'-'+qi;
+    if(photos[pk]){const img=el('img','photo');img.src=photos[pk];img.alt='Foto bij deze vraag';stage.append(img)}
+    const up=el('label','upload');up.append('Foto bij deze vraag: ');const inp=el('input');inp.type='file';inp.accept='image/*';inp.id='up-'+pk;
+    inp.onchange=()=>{const f=inp.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{photos[pk]=fr.result;render()};fr.readAsDataURL(f)};
+    up.append(inp);stage.append(up);
+  }
+  const peek=!!G.peek;
+  const chips=el('div','chips');
+  const foundCount=q.answers.filter((_,i)=>G.found[`${r.id}-${qi}-${i}`]).length;
+  q.answers.forEach((a,i)=>{
+    const key=`${r.id}-${qi}-${i}`;const f=G.found[key];
+    const c=el('button','chip'+(f?' found':'')+(peek?' peek':''));
+    c.append(el('span','n',i+1),el('span','t',a));
+    if(f)c.append(el('span','pts',r.type==='finale'?`−${f.pts} anderen`:`+${f.pts} ${G.teams[f.team]?.name||''}`));
+    c.onclick=()=>toggleFound(key,()=>{
+      const team=G.active;
+      if(r.type==='finale'){G.teams.forEach((_,j)=>{if(j!==team)addSec(j,-20)});return {team,pts:20}}
+      const pts=r.pts(foundCount);addSec(team,pts);return {team,pts};
+    },f=>{
+      if(r.type==='finale'){G.teams.forEach((_,j)=>{if(j!==f.team)addSec(j,f.pts)})}else addSec(f.team,-f.pts);
+    });
+    chips.append(c);
+  });
+  stage.append(chips);
+  const row=el('div','row');
+  const pk=el('button','btn sm',peek?'Antwoorden verbergen':'Spiekmodus (alleen voor de quizmaster)');pk.onclick=()=>{G.peek=!G.peek;render()};
+  row.append(el('span','hint','Klik een antwoord als het genoemd wordt. Nog een keer klikken maakt het ongedaan.'),el('span','spacer'),pk);
+  stage.append(row);
+}
+function renderPuzzel(stage,r){
+  const pz=parsePuzzels(data.pz);
+  stage.append(nav(r,pz.length));
+  if(!pz.length){stage.append(el('p','hint','Nog geen puzzel. Voeg er een toe via Vragen bewerken.'));return}
+  const pi=Math.min(G.q[r.id]||0,pz.length-1);const p=pz[pi];
+  stage.append(el('div','question','Zoek de 3 verbanden'));
+  const words=[];p.forEach((g,gi)=>g.words.forEach(w=>words.push({w,gi})));
+  const foundG=gi=>!!G.found[`pz-${pi}-${gi}`];
+  const order=shuffled(words,pi+7);
+  const sorted=[...p.map((_,gi)=>gi).filter(foundG).flatMap(gi=>order.filter(x=>x.gi===gi)),...order.filter(x=>!foundG(x.gi))];
+  const grid=el('div','grid12');
+  sorted.forEach(x=>grid.append(el('div','tile'+(foundG(x.gi)?' g'+(x.gi%3):''),x.w)));
+  stage.append(grid);
+  const conn=el('div','conn');
+  p.forEach((g,gi)=>{
+    const key=`pz-${pi}-${gi}`;const f=G.found[key];
+    const c=el('button','chip'+(f?' found g'+(gi%3):'')+(G.peek?' peek':''));
+    c.append(el('span','n',gi+1),el('span','t',g.name));
+    if(f)c.append(el('span','pts',`+30 ${G.teams[f.team]?.name||''}`));
+    c.onclick=()=>toggleFound(key,()=>{addSec(G.active,30);return {team:G.active,pts:30}},f=>addSec(f.team,-30));
+    conn.append(c);
+  });
+  stage.append(el('div','eyebrow','Verbanden · klik als een team het verband noemt'),conn);
+  const pk=el('button','btn sm',G.peek?'Verbanden verbergen':'Spiekmodus (alleen voor de quizmaster)');pk.onclick=()=>{G.peek=!G.peek;render()};
+  const row=el('div','row');row.append(el('span','spacer'),pk);stage.append(row);
+}
+function renderStage(){
+  const stage=$('stage');stage.innerHTML='';
+  const r=ROUNDS[G.round];
+  if(r.type==='369')render369(stage,r);
+  else if(r.type==='puzzel')renderPuzzel(stage,r);
+  else renderItems(stage,r);
+}
+function render(){renderRounds();renderTeams();renderStage()}
+
+/* clock */
+let tick=null;
+function startClock(){if(G.running)return;G.running=true;tick=setInterval(()=>{const t=G.teams[G.active];t.sec=Math.max(0,t.sec-1);if(t.sec===0){stopClock();showShot(t.name)}persist();renderTeams()},1000);renderTeams()}
+function stopClock(){G.running=false;clearInterval(tick);tick=null;renderTeams()}
+$('clockBtn').onclick=()=>G.running?stopClock():startClock();
+$('nextTeam').onclick=()=>{stopClock();G.active=(G.active+1)%G.teams.length;persist();render()};
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.target.closest('textarea,input,button')&&!$('viewPlay').hidden){e.preventDefault();G.running?stopClock():startClock()}});
+function showShot(name){$('shotWho').textContent=`${name} staat op 0 seconden`;$('shot').hidden=false}
+$('shotOk').onclick=()=>{$('shot').hidden=true};
+
+/* editor */
+function fillEditor(){
+  $('fTeams').value=data.teams;$('fStart').value=data.start;
+  const box=$('roundFields');box.innerHTML='';
+  ROUNDS.forEach(r=>{
+    const f=el('div','field');const lb=el('label',null,r.name);lb.htmlFor='f-'+r.id;
+    const fm=el('div','fmt');fm.innerHTML=r.fmt;
+    const ta=el('textarea');ta.id='f-'+r.id;ta.value=data[r.id]||'';ta.style.minHeight=r.id==='r369'?'320px':'160px';
+    f.append(lb,fm,ta);box.append(f);
+  });
+}
+function readEditor(){
+  const teamsChanged=$('fTeams').value!==data.teams||+$('fStart').value!==+data.start;
+  data={teams:$('fTeams').value,start:+$('fStart').value||60};
+  ROUNDS.forEach(r=>data[r.id]=$('f-'+r.id).value);
+  if(teamsChanged){const keep=G.round;G=freshGame();G.round=keep}
+}
+function toast(msg){const t=el('div','toast',msg);document.body.append(t);setTimeout(()=>t.remove(),1800)}
+function show(view){
+  $('viewPlay').hidden=view!=='play';$('viewEdit').hidden=view!=='edit';
+  $('tabPlay').setAttribute('aria-pressed',view==='play');$('tabEdit').setAttribute('aria-pressed',view==='edit');
+  if(view==='edit'){stopClock();fillEditor()}else render();
+}
+$('tabPlay').onclick=()=>{if(!$('viewEdit').hidden){readEditor();persist()}show('play')};
+$('tabEdit').onclick=()=>show('edit');
+$('saveBtn').onclick=()=>{readEditor();persist();toast('Opgeslagen');show('play')};
+$('resetScores').onclick=()=>{readEditor();G=freshGame();persist();toast('Scores gereset, iedereen op '+data.start+' seconden')};
+$('restoreBtn').onclick=()=>{$('restoreConfirm').hidden=false};
+$('restoreNo').onclick=()=>{$('restoreConfirm').hidden=true};
+$('restoreYes').onclick=()=>{data={...DEFAULT};G=freshGame();persist();fillEditor();$('restoreConfirm').hidden=true;toast('Voorbeeldvragen teruggezet')};
+
+render();
+</script>
+
+</html>
