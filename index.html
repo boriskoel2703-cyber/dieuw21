@@ -75,6 +75,24 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .conn .chip{min-height:0;font-size:16px;flex:1 1 200px}
 .conn .chip.found.g0{border-color:var(--g1)} .conn .chip.found.g1{border-color:var(--g2)} .conn .chip.found.g2{border-color:var(--g3)}
 
+.doors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.doors{grid-template-columns:1fr}}
+.door{display:flex;flex-direction:column;gap:8px;min-width:0}
+.door .screen{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:14px;overflow:hidden;background:var(--blue-deep);border:3px solid var(--ball);cursor:pointer;display:grid;place-items:center;padding:0;width:100%}
+.door .screen video{width:100%;height:100%;object-fit:cover;display:block}
+.door .screen .lbl{position:absolute;left:0;right:0;bottom:0;padding:8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.75));font-family:var(--display);font-size:20px;text-align:left;color:#fff}
+.door .screen .play{position:absolute;width:56px;height:56px;border-radius:50%;background:var(--ball);color:var(--turf);display:grid;place-items:center;font-size:22px}
+.door.used .screen{opacity:.35;border-color:var(--line);cursor:default}
+.door .empty{font-weight:700;color:var(--chalk-dim);padding:12px;text-align:center}
+.door .upload input{width:100%}
+.big{position:fixed;inset:0;z-index:15;background:rgba(40,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px}
+.big video{width:min(100%,1100px);max-height:78vh;border-radius:16px;border:4px solid var(--ball);background:#000}
+.big h3{font-family:var(--display);font-weight:400;font-size:clamp(24px,3vw,36px);margin:0}
+@media (prefers-reduced-motion:no-preference){.big video{animation:grow .35s ease-out}}
+@keyframes grow{from{transform:scale(.35);opacity:.3}}
+.mini{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:640px){.mini{grid-template-columns:1fr}}
+.mini video{width:100%;border-radius:12px;border:3px solid var(--ball);background:#000}
 .photo{max-width:100%;max-height:340px;border-radius:14px;border:1px solid var(--line);object-fit:contain;align-self:flex-start}
 .upload{font-size:14px;color:var(--chalk-dim)}
 .upload input{font-size:14px;max-width:100%}
@@ -133,7 +151,7 @@ textarea{min-height:140px;resize:vertical}
         <button class="btn primary" id="clockBtn">Start klok</button>
         <button class="btn" id="nextTeam">Volgend team</button>
       </div>
-      <p class="hint">Spatiebalk = klok start/stop. Klik een team om het aan de beurt te zetten. Op 0 seconden: shotje.</p>
+      <p class="hint">Spatiebalk = klok start/stop. Op 0 seconden: shotje.</p>
     </aside>
   </section>
 
@@ -162,14 +180,14 @@ textarea{min-height:140px;resize:vertical}
 <script>
 const ROUNDS=[
   {id:'r369',name:'3-6-9',type:'369',fmt:'Eén vraag per regel: <code>vraag | antwoord</code>. Bij vraag 3, 6, 9, 12 en 15 levert een goed antwoord 10 seconden op.'},
-  {id:'od',name:'Open Deur',type:'items',pts:()=>20,fmt:'Per regel: <code>vraag | antw1; antw2; antw3; antw4</code>. Elk gevonden antwoord: 20 seconden.'},
+  {id:'od',name:'Open Deur',type:'opendeur',fmt:'3 regels = 3 deuren: <code>wie stelt de vraag | antw1; …; antw5</code>. De video’s worden door Claude toegevoegd. Elk gevonden antwoord: 20 seconden.'},
   {id:'pz',name:'Puzzel',type:'puzzel',fmt:'Per regel één verband: <code>verband: woord, woord, woord, woord</code>. 3 regels = 1 puzzel. Lege regel tussen puzzels. Elk verband: 30 seconden.'},
-  {id:'il',name:'Ingelijst',type:'items',pts:()=>10,fmt:'Per regel: <code>onderwerp | antw1; antw2; …</code> (tot 10). Elk antwoord: 10 seconden.'},
+  {id:'il',name:'Gallery',type:'items',pts:()=>10,fmt:'Per regel: <code>onderwerp | antw1; antw2; …</code> (tot 10). Elk antwoord: 10 seconden.'},
   {id:'cg',name:'Collectief Geheugen',type:'items',pts:(n)=>(n+1)*10,photo:true,fmt:'Per regel: <code>omschrijving | trefwoord; trefwoord; …</code> (5 stuks). Eerste vondst 10 s, dan 20, 30, 40, 50. Foto toevoegen kan tijdens het spelen.'},
-  {id:'fi',name:'Finale',type:'finale',fmt:'Per regel: <code>vraag | antw1; …; antw5</code>. Elk gevonden antwoord haalt 20 seconden af bij de andere teams.'}
+  {id:'fi',name:'Finale',type:'finale',fmt:'Per regel: <code>vraag | antw1; …; antw5</code>. Met één team: elk gevonden antwoord +20 seconden. Met meer teams: −20 seconden bij de andere teams.'}
 ];
 const DEFAULT={
-  teams:'Team Stick\nTeam Karaoke\nTeam Kater',
+  teams:'Team Dieuwke',
   start:60,
   r369:`Hoeveel spelers staan er per team op het veld bij hockey? | 11 (inclusief keeper)
 Op welke datum is Dieuwke jarig? | [invullen]
@@ -186,9 +204,9 @@ Van welke artiest is Dieuwke stiekem fan, maar geeft ze dat nooit toe? | [invull
 Hoe heet het gebied waarbinnen je moet staan om te mogen scoren? | De cirkel (slagcirkel)
 Om welk moment moet Dieuwke nu nog steeds keihard lachen? | [invullen]
 In welk jaar is Dieuwke geboren? | 2005`,
-  od:`Wat moet je weten over Dieuwke op de hockeyclub? | [invullen]; [invullen]; [invullen]; [invullen]
-Hoe merk je dat Dieuwke een paar drankjes op heeft? | Ze begint te zingen; [invullen]; [invullen]; [invullen]
-Waarom moet je met Dieuwke op vakantie? | [invullen]; [invullen]; [invullen]; [invullen]`,
+  od:`Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
   pz:`Hockey: Stick, Cirkel, Strafcorner, Scheenbeschermer
 Karaoke: Microfoon, Refrein, Valse noot, Duet
 Een avond stappen met Dieuwke: Kater, Shotje, Kopstootje, Afterparty`,
@@ -204,18 +222,28 @@ Wat zegt Dieuwke als ze aangeschoten is? | [invullen]; [invullen]; [invullen]; [
 };
 const KEY='slimste-dieuwke-v1';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.data)return s}catch(e){}return null}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369}}))}catch(e){}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
 
 const saved=load();
 let data=saved?saved.data:{...DEFAULT};
+const OLD_TEAMS='Team Stick\nTeam Karaoke\nTeam Kater';
+const migrated=saved&&data.teams===OLD_TEAMS;
+if(migrated)data.teams=DEFAULT.teams;
+if(data.od&&data.od.startsWith('Wat moet je weten over Dieuwke op de hockeyclub?'))data.od=DEFAULT.od;
+if(data.od&&data.od.trim()===`Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Hockeyteam | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Beste vriendin | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`)data.od=DEFAULT.od;
+if(data.od&&data.od.trim()===`Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Hockeyteam | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Beste vriendin | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`)data.od=DEFAULT.od;
 const photos={};
 let G;
 function freshGame(){
   const names=data.teams.split('\n').map(s=>s.trim()).filter(Boolean);
-  return {teams:(names.length?names:['Team 1','Team 2']).map(n=>({name:n,sec:+data.start||60})),active:0,round:0,q:{},found:{},q369:{idx:0,done:[]},running:false};
+  return {od:{used:[],cur:null,phase:'choose'},teams:(names.length?names:['Team 1','Team 2']).map(n=>({name:n,sec:+data.start||60})),active:0,round:0,q:{},found:{},q369:{idx:0,done:[]},running:false};
 }
 G=freshGame();
-if(saved&&saved.game&&saved.game.teams){Object.assign(G,saved.game);G.running=false}
+if(saved&&saved.game&&saved.game.teams&&!migrated){Object.assign(G,saved.game);G.running=false}
 
 /* parsers */
 const lines=t=>(t||'').split('\n').map(s=>s.trim()).filter(Boolean);
@@ -250,13 +278,14 @@ function renderTeams(){
     c.onclick=e=>{if(e.target.closest('.adj'))return;G.active=i;persist();render()};
     c.onkeydown=e=>{if(e.key==='Enter'){G.active=i;persist();render()}};
     const nm=el('div','nm',t.name);
-    const tag=el('div','tag',i===G.active?(G.running?'● klok loopt':'aan de beurt'):'');
+    const tag=el('div','tag',i===G.active?(G.running?'● klok loopt':(G.teams.length>1?'aan de beurt':'klok staat stil')):'');
     const sec=el('div','sec',t.sec);
     const adj=el('div','adj');
     [[-10,'−10'],[-1,'−1'],[1,'+1'],[10,'+10']].forEach(([d,l])=>{const b=el('button','btn sm',l);b.onclick=()=>{addSec(i,d);persist();renderTeams()};adj.append(b)});
     c.append(nm,sec,tag,adj);box.append(c);
   });
   $('clockBtn').textContent=G.running?'Stop klok':'Start klok';
+  $('nextTeam').hidden=G.teams.length<2;
 }
 function nav(r,count){
   const row=el('div','row');
@@ -272,7 +301,7 @@ function render369(stage,r){
   const qs=parseQA(data.r369);const s=G.q369;
   const dots=el('div','dots');
   qs.forEach((_,i)=>{const d=el('div','dot'+((i+1)%3===0?' x3':'')+(i===s.idx?' cur':'')+(s.done.includes(i)?' done':''),i+1);dots.append(d)});
-  stage.append(el('div','eyebrow',`3-6-9 · vraag ${Math.min(s.idx+1,qs.length)} van ${qs.length} · ${G.teams[G.active].name} is aan de beurt`),dots);
+  stage.append(el('div','eyebrow',`3-6-9 · vraag ${Math.min(s.idx+1,qs.length)} van ${qs.length}`+(G.teams.length>1?` · ${G.teams[G.active].name} is aan de beurt`:'')),dots);
   if(s.idx>=qs.length){stage.append(el('div','question','Ronde klaar! Door naar Open Deur.'));const b=el('button','btn sm','Ronde opnieuw');b.onclick=()=>{G.q369={idx:0,done:[]};persist();render()};stage.append(b);return}
   const q=qs[s.idx];const bonus=(s.idx+1)%3===0;
   stage.append(el('div','question',q.q));
@@ -281,9 +310,10 @@ function render369(stage,r){
   const row=el('div','row');
   const show=el('button','btn',s.show?'Verberg antwoord':'Toon antwoord');show.onclick=()=>{s.show=!s.show;persist();render()};
   const good=el('button','btn good','Goed');good.onclick=()=>{if(bonus)addSec(G.active,10);s.done.push(s.idx);s.idx++;s.show=false;persist();render()};
-  const bad=el('button','btn bad','Fout, volgend team');bad.onclick=()=>{G.active=(G.active+1)%G.teams.length;s.show=false;persist();render()};
+  const solo=G.teams.length===1;
+  const bad=el('button','btn bad',solo?'Fout':'Fout, volgend team');bad.onclick=()=>{if(solo){s.done.push(s.idx);s.idx++}else G.active=(G.active+1)%G.teams.length;s.show=false;persist();render()};
   const skip=el('button','btn sm','Niemand wist het, volgende vraag');skip.onclick=()=>{s.done.push(s.idx);s.idx++;s.show=false;G.active=(G.active+1)%G.teams.length;persist();render()};
-  row.append(show,good,bad,el('span','spacer'),skip);stage.append(row);
+  row.append(show,good,bad);if(!solo)row.append(el('span','spacer'),skip);stage.append(row);
 }
 function renderItems(stage,r){
   const qs=r.type==='finale'?parseItems(data.fi):parseItems(data[r.id]);
@@ -305,13 +335,13 @@ function renderItems(stage,r){
     const key=`${r.id}-${qi}-${i}`;const f=G.found[key];
     const c=el('button','chip'+(f?' found':'')+(peek?' peek':''));
     c.append(el('span','n',i+1),el('span','t',a));
-    if(f)c.append(el('span','pts',r.type==='finale'?`−${f.pts} anderen`:`+${f.pts} ${G.teams[f.team]?.name||''}`));
+    if(f)c.append(el('span','pts',r.type==='finale'&&!f.solo?`−${f.pts} anderen`:`+${f.pts} ${G.teams[f.team]?.name||''}`));
     c.onclick=()=>toggleFound(key,()=>{
       const team=G.active;
-      if(r.type==='finale'){G.teams.forEach((_,j)=>{if(j!==team)addSec(j,-20)});return {team,pts:20}}
+      if(r.type==='finale'){if(G.teams.length===1){addSec(team,20);return {team,pts:20,solo:true}}G.teams.forEach((_,j)=>{if(j!==team)addSec(j,-20)});return {team,pts:20}}
       const pts=r.pts(foundCount);addSec(team,pts);return {team,pts};
     },f=>{
-      if(r.type==='finale'){G.teams.forEach((_,j)=>{if(j!==f.team)addSec(j,f.pts)})}else addSec(f.team,-f.pts);
+      if(r.type==='finale'&&!f.solo){G.teams.forEach((_,j)=>{if(j!==f.team)addSec(j,f.pts)})}else addSec(f.team,-f.pts);
     });
     chips.append(c);
   });
@@ -330,9 +360,8 @@ function renderPuzzel(stage,r){
   const words=[];p.forEach((g,gi)=>g.words.forEach(w=>words.push({w,gi})));
   const foundG=gi=>!!G.found[`pz-${pi}-${gi}`];
   const order=shuffled(words,pi+7);
-  const sorted=[...p.map((_,gi)=>gi).filter(foundG).flatMap(gi=>order.filter(x=>x.gi===gi)),...order.filter(x=>!foundG(x.gi))];
   const grid=el('div','grid12');
-  sorted.forEach(x=>grid.append(el('div','tile'+(foundG(x.gi)?' g'+(x.gi%3):''),x.w)));
+  order.forEach(x=>grid.append(el('div','tile'+(foundG(x.gi)?' g'+(x.gi%3):''),x.w)));
   stage.append(grid);
   const conn=el('div','conn');
   p.forEach((g,gi)=>{
@@ -347,11 +376,78 @@ function renderPuzzel(stage,r){
   const pk=el('button','btn sm',G.peek?'Verbanden verbergen':'Spiekmodus (alleen voor de quizmaster)');pk.onclick=()=>{G.peek=!G.peek;render()};
   const row=el('div','row');row.append(el('span','spacer'),pk);stage.append(row);
 }
+const vids={};
+const BUILTIN_VIDS={0:'videos/mama-1.mp4'};
+const vsrc=d=>vids['od-'+d]||BUILTIN_VIDS[d]||null;let vdbp=null;
+function vdb(){if(vdbp)return vdbp;vdbp=new Promise((res,rej)=>{try{const q=indexedDB.open('slimste-dieuwke-videos',1);q.onupgradeneeded=()=>q.result.createObjectStore('v');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}});return vdbp}
+async function saveVideo(key,file){if(vids[key])URL.revokeObjectURL(vids[key]);vids[key]=URL.createObjectURL(file);render();try{const db=await vdb();db.transaction('v','readwrite').objectStore('v').put(file,key)}catch(e){toast('Video werkt nu, maar kon niet worden bewaard voor later')}}
+async function loadVideos(){try{const db=await vdb();const req=db.transaction('v').objectStore('v').openCursor();req.onsuccess=()=>{const c=req.result;if(c){vids[c.key]=URL.createObjectURL(c.value);c.continue()}else render()}}catch(e){}}
+function closeBig(){const b=document.querySelector('.big');if(b){const v=b.querySelector('video');if(v)v.pause();b.remove()}}
+function openDoorVideo(d,name){
+  closeBig();
+  const ov=el('div','big');const h=el('h3',null,name);
+  const v=el('video');v.src=vsrc(d);v.controls=true;v.playsInline=true;
+  const btn=el('button','btn primary','Klaar, start de tijd');
+  const done=()=>{closeBig();G.od.phase='answer';persist();render();startClock()};
+  v.onended=done;btn.onclick=done;
+  ov.append(h,v,btn);document.body.append(ov);
+  v.play().catch(()=>{});
+}
+function renderOpenDeur(stage,r){
+  const doors=parseItems(data.od).slice(0,3).map(x=>({q:x.q,answers:x.answers.slice(0,5)}));
+  G.od=G.od||{used:[],cur:null,phase:'choose'};const od=G.od;
+  if(od.phase==='answer'&&od.cur!=null&&doors[od.cur]){
+    const d=od.cur,door=doors[d];
+    stage.append(el('div','eyebrow',`Open Deur · vraag van ${door.q}`));
+    const mini=el('div','mini');
+    const left=el('div');
+    if(vsrc(d)){const v=el('video');v.src=vsrc(d);v.controls=true;v.muted=false;v.playsInline=true;left.append(v)}
+    const right=el('div');right.style.cssText='display:flex;flex-direction:column;gap:12px;min-width:0';
+    const chips=el('div','chips');
+    door.answers.forEach((a,i)=>{
+      const key=`od-${d}-${i}`;const f=G.found[key];
+      const c=el('button','chip'+(f?' found':'')+(G.peek?' peek':''));
+      c.append(el('span','n',i+1),el('span','t',a));if(f)c.append(el('span','pts','+20'));
+      c.onclick=()=>{toggleFound(key,()=>{addSec(G.active,20);return {team:G.active,pts:20}},f=>addSec(f.team,-f.pts));
+        if(door.answers.every((_,j)=>G.found[`od-${d}-${j}`]))stopClock()};
+      chips.append(c);
+    });
+    right.append(chips);
+    mini.append(left,right);stage.append(mini);
+    const row=el('div','row');
+    const back=el('button','btn primary','Stop, terug naar de deuren');
+    back.onclick=()=>{stopClock();if(!od.used.includes(d))od.used.push(d);od.cur=null;od.phase='choose';persist();render()};
+    const pk=el('button','btn sm',G.peek?'Antwoorden verbergen':'Spiekmodus (alleen voor de quizmaster)');pk.onclick=()=>{G.peek=!G.peek;render()};
+    row.append(back,el('span','hint','Klik een antwoord als het genoemd wordt.'),el('span','spacer'),pk);
+    stage.append(row);
+    return;
+  }
+  stage.append(el('div','eyebrow','Open Deur · kies een deur'));
+  stage.append(el('div','question','Welk filmpje wil je zien?'));
+  const grid=el('div','doors');
+  doors.forEach((door,d)=>{
+    const used=od.used.includes(d);const has=!!vsrc(d);
+    const box=el('div','door'+(used?' used':''));
+    const sc=el('button','screen');sc.setAttribute('aria-label','Deur '+(d+1)+': '+door.q);
+    if(has){const v=el('video');v.src=vsrc(d)+'#t=0.5';v.muted=true;v.preload='metadata';v.playsInline=true;sc.append(v);if(!used)sc.append(el('span','play','▶'))}
+    else sc.append(el('span','empty','Nog geen video'));
+    sc.append(el('span','lbl',used?door.q+' · geweest':door.q));
+    sc.onclick=()=>{if(used||!has)return;stopClock();od.cur=d;od.phase='video';persist();openDoorVideo(d,door.q)};
+    box.append(sc);
+    grid.append(box);
+  });
+  stage.append(grid);
+  const row=el('div','row');
+  const reset=el('button','btn sm','Alle deuren weer openzetten');reset.onclick=()=>{od.used=[];od.cur=null;od.phase='choose';persist();render()};
+  row.append(el('span','hint','Klik een deur: de video wordt groot en speelt met geluid. Daarna start de klok automatisch.'),el('span','spacer'),reset);
+  stage.append(row);
+}
 function renderStage(){
   const stage=$('stage');stage.innerHTML='';
   const r=ROUNDS[G.round];
   if(r.type==='369')render369(stage,r);
   else if(r.type==='puzzel')renderPuzzel(stage,r);
+  else if(r.type==='opendeur')renderOpenDeur(stage,r);
   else renderItems(stage,r);
 }
 function render(){renderRounds();renderTeams();renderStage()}
@@ -362,7 +458,7 @@ function startClock(){if(G.running)return;G.running=true;tick=setInterval(()=>{c
 function stopClock(){G.running=false;clearInterval(tick);tick=null;renderTeams()}
 $('clockBtn').onclick=()=>G.running?stopClock():startClock();
 $('nextTeam').onclick=()=>{stopClock();G.active=(G.active+1)%G.teams.length;persist();render()};
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.target.closest('textarea,input,button')&&!$('viewPlay').hidden){e.preventDefault();G.running?stopClock():startClock()}});
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!document.querySelector('.big')&&!e.target.closest('textarea,input,button,video')&&!$('viewPlay').hidden){e.preventDefault();G.running?stopClock():startClock()}});
 function showShot(name){$('shotWho').textContent=`${name} staat op 0 seconden`;$('shot').hidden=false}
 $('shotOk').onclick=()=>{$('shot').hidden=true};
 
@@ -397,7 +493,9 @@ $('restoreBtn').onclick=()=>{$('restoreConfirm').hidden=false};
 $('restoreNo').onclick=()=>{$('restoreConfirm').hidden=true};
 $('restoreYes').onclick=()=>{data={...DEFAULT};G=freshGame();persist();fillEditor();$('restoreConfirm').hidden=true;toast('Voorbeeldvragen teruggezet')};
 
+if(G.od&&G.od.phase==='video'){G.od.phase='choose';G.od.cur=null}
 render();
+loadVideos();
 </script>
 
 </html>
