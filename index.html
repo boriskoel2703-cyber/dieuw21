@@ -93,6 +93,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .mini{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:640px){.mini{grid-template-columns:1fr}}
 .mini video{width:100%;border-radius:12px;border:3px solid var(--ball);background:#000}
+.galimg{max-width:100%;max-height:62vh;border-radius:14px;border:4px solid var(--ball);object-fit:contain;align-self:center;background:#000}
 .photo{max-width:100%;max-height:340px;border-radius:14px;border:1px solid var(--line);object-fit:contain;align-self:flex-start}
 .upload{font-size:14px;color:var(--chalk-dim)}
 .upload input{font-size:14px;max-width:100%}
@@ -182,7 +183,7 @@ const ROUNDS=[
   {id:'r369',name:'3-6-9',type:'369',fmt:'Eén vraag per regel: <code>vraag | antwoord</code>. Bij vraag 3, 6, 9, 12 en 15 levert een goed antwoord 10 seconden op.'},
   {id:'od',name:'Open Deur',type:'opendeur',fmt:'3 regels = 3 deuren: <code>wie stelt de vraag | antw1; …; antw5</code>. De video’s worden door Claude toegevoegd. Elk gevonden antwoord: 20 seconden.'},
   {id:'pz',name:'Puzzel',type:'puzzel',fmt:'Per regel één verband: <code>verband: woord, woord, woord, woord</code>. 3 regels = 1 puzzel. Lege regel tussen puzzels. Elk verband: 30 seconden.'},
-  {id:'il',name:'Gallery',type:'items',pts:()=>10,fmt:'Per regel: <code>onderwerp | antw1; antw2; …</code> (tot 10). Elk antwoord: 10 seconden.'},
+  {id:'il',name:'Gallery',type:'gallery',fmt:'Per regel één fotoserie: <code>onderwerp | antwoord foto 1; antwoord foto 2; …</code>. De foto’s worden door Claude toegevoegd, op dezelfde volgorde. Elke goed geraden foto: 10 seconden.'},
   {id:'cg',name:'Collectief Geheugen',type:'items',pts:(n)=>(n+1)*10,photo:true,fmt:'Per regel: <code>omschrijving | trefwoord; trefwoord; …</code> (5 stuks). Eerste vondst 10 s, dan 20, 30, 40, 50. Foto toevoegen kan tijdens het spelen.'},
   {id:'fi',name:'Finale',type:'finale',fmt:'Per regel: <code>vraag | antw1; …; antw5</code>. Met één team: elk gevonden antwoord +20 seconden. Met meer teams: −20 seconden bij de andere teams.'}
 ];
@@ -210,8 +211,7 @@ Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
   pz:`Hockey: Stick, Cirkel, Strafcorner, Scheenbeschermer
 Karaoke: Microfoon, Refrein, Valse noot, Duet
 Een avond stappen met Dieuwke: Kater, Shotje, Kopstootje, Afterparty`,
-  il:`Nederlandse meezingers die op elk feest voorbijkomen | Zij gelooft in mij; Het is een nacht; Mag ik dan bij jou; Zoutelande; Avond; Bloed, zweet en tranen; Ik leef niet meer voor jou; Pastorale; Viva Hollandia; Brabant
-Dingen in een hockeytas | Stick; Bal; Scheenbeschermers; Bitje; Kousen; Hockeyschoenen; Handschoen; Waterfles; Tape; Clubshirt`,
+  il:`Dieuwke op haar best: waar/wanneer was dit? | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
   cg:`Dieuwke's vorige verjaardag | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
 Het gezelligste hockeyfeest | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
 Een avond karaoke met de vriendengroep | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
@@ -222,13 +222,14 @@ Wat zegt Dieuwke als ze aangeschoten is? | [invullen]; [invullen]; [invullen]; [
 };
 const KEY='slimste-dieuwke-v1';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.data)return s}catch(e){}return null}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{gal:G.gal,pass:G.pass,teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
 
 const saved=load();
 let data=saved?saved.data:{...DEFAULT};
 const OLD_TEAMS='Team Stick\nTeam Karaoke\nTeam Kater';
 const migrated=saved&&data.teams===OLD_TEAMS;
 if(migrated)data.teams=DEFAULT.teams;
+if(data.il&&data.il.startsWith('Nederlandse meezingers die op elk feest'))data.il=DEFAULT.il;
 if(data.od&&data.od.startsWith('Wat moet je weten over Dieuwke op de hockeyclub?'))data.od=DEFAULT.od;
 if(data.od&&data.od.trim()===`Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
 Hockeyteam | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
@@ -240,7 +241,7 @@ const photos={};
 let G;
 function freshGame(){
   const names=data.teams.split('\n').map(s=>s.trim()).filter(Boolean);
-  return {od:{used:[],cur:null,phase:'choose'},teams:(names.length?names:['Team 1','Team 2']).map(n=>({name:n,sec:+data.start||60})),active:0,round:0,q:{},found:{},q369:{idx:0,done:[]},running:false};
+  return {gal:{},pass:{},od:{used:[],cur:null,phase:'choose'},teams:(names.length?names:['Team 1','Team 2']).map(n=>({name:n,sec:+data.start||60})),active:0,round:0,q:{},found:{},q369:{idx:0,done:[]},running:false};
 }
 G=freshGame();
 if(saved&&saved.game&&saved.game.teams&&!migrated){Object.assign(G,saved.game);G.running=false}
@@ -442,12 +443,50 @@ function renderOpenDeur(stage,r){
   row.append(el('span','hint','Klik een deur: de video wordt groot en speelt met geluid. Daarna start de klok automatisch.'),el('span','spacer'),reset);
   stage.append(row);
 }
+const GAL_PHOTOS={0:[1,2,3,4,5,6,7].map(n=>`gallery/gallery-${n}.jpg`)};
+function renderGallery(stage,r){
+  const qs=parseItems(data.il);
+  stage.append(nav(r,qs.length));
+  if(!qs.length){stage.append(el('p','hint','Nog geen fotoseries.'));return}
+  const si=Math.min(G.q[r.id]||0,qs.length-1);const q=qs[si];
+  const pics=GAL_PHOTOS[si]||[];
+  const n=Math.max(q.answers.length,pics.length);
+  G.gal=G.gal||{};G.pass=G.pass||{};
+  const idx=Math.min(G.gal[si]||0,n);
+  stage.append(el('div','question',q.q));
+  const dots=el('div','dots');
+  for(let i=0;i<n;i++){const k=`il-${si}-${i}`;const d=el('button','dot'+(i===idx?' cur':'')+(G.found[k]?' x3':'')+(G.pass[k]?' done':''),i+1);d.onclick=()=>{G.gal[si]=i;persist();render()};dots.append(d)}
+  stage.append(dots);
+  if(idx>=n){
+    const got=[...Array(n).keys()].filter(i=>G.found[`il-${si}-${i}`]).length;
+    stage.append(el('div','question',`Serie klaar: ${got} van ${n} goed`));
+    const b=el('button','btn sm','Serie opnieuw bekijken');b.onclick=()=>{G.gal[si]=0;persist();render()};stage.append(b);
+    return;
+  }
+  const k=`il-${si}-${idx}`;
+  if(pics[idx]){const img=el('img','galimg');img.src=pics[idx];img.alt='Foto '+(idx+1);stage.append(img)}
+  else stage.append(el('div','note',`Nog geen foto voor nummer ${idx+1}.`));
+  const ans=el('div','answer',q.answers[idx]||'');ans.hidden=!(G.peek||G.found[k]||G.pass[k]);stage.append(ans);
+  const go=d=>{G.gal[si]=Math.max(0,idx+d);persist();render()};
+  const row=el('div','row');
+  if(G.found[k]){const u=el('button','btn sm','Goed ongedaan maken');u.onclick=()=>{addSec(G.found[k].team,-G.found[k].pts);delete G.found[k];persist();render()};row.append(u)}
+  else{
+    const good=el('button','btn good','Goed (+10)');good.onclick=()=>{G.found[k]={team:G.active,pts:10};delete G.pass[k];addSec(G.active,10);go(1)};
+    const pass=el('button','btn bad','Pas');pass.onclick=()=>{G.pass[k]=true;go(1)};
+    row.append(good,pass);
+  }
+  const prev=el('button','btn sm','← Vorige foto');prev.onclick=()=>go(-1);prev.disabled=idx===0;prev.style.opacity=idx===0?.4:1;
+  const next=el('button','btn sm','Volgende foto →');next.onclick=()=>go(1);
+  const pk=el('button','btn sm',G.peek?'Antwoord verbergen':'Spiekmodus');pk.onclick=()=>{G.peek=!G.peek;render()};
+  row.append(el('span','spacer'),prev,next,pk);stage.append(row);
+}
 function renderStage(){
   const stage=$('stage');stage.innerHTML='';
   const r=ROUNDS[G.round];
   if(r.type==='369')render369(stage,r);
   else if(r.type==='puzzel')renderPuzzel(stage,r);
   else if(r.type==='opendeur')renderOpenDeur(stage,r);
+  else if(r.type==='gallery')renderGallery(stage,r);
   else renderItems(stage,r);
 }
 function render(){renderRounds();renderTeams();renderStage()}
