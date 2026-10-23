@@ -100,6 +100,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 @media (max-width:640px){.mini{grid-template-columns:1fr}}
 .mini video{width:100%;border-radius:12px;border:3px solid var(--ball);background:#000}
 .host{align-self:flex-start;background:var(--ball);color:var(--turf);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:999px}
+.uitleg{display:flex;flex-direction:column;gap:16px;max-width:760px}
+.uitleg ul{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:clamp(18px,1.8vw,22px);line-height:1.4}
+.uitleg .btn{align-self:flex-start;font-size:18px;padding:12px 28px}
+.score369{display:flex;gap:16px;flex-wrap:wrap}
+.score369 .sc{flex:1 1 160px;border-radius:18px;padding:18px 22px;display:flex;align-items:baseline;gap:12px}
+.score369 .sc.good{background:var(--ball);color:var(--turf)}
+.score369 .sc.bad{background:var(--blue-deep);border:2px solid var(--line)}
+.score369 .num{font-family:var(--display);font-size:clamp(64px,9vw,110px);line-height:.9;font-variant-numeric:tabular-nums}
+.score369 .lbl{font-size:24px;font-weight:700}
 .talkbig{font-family:var(--display);font-size:clamp(120px,22vw,240px);line-height:.9;color:var(--ball);font-variant-numeric:tabular-nums;text-align:center}
 .talkerr{font-size:22px;font-weight:700}
 .galimg{max-width:100%;max-height:62vh;border-radius:14px;border:4px solid var(--ball);object-fit:contain;align-self:center;background:#000}
@@ -150,7 +159,7 @@ textarea{min-height:140px;resize:vertical}
   <header>
     <div class="logo" id="logo" role="button" tabindex="0" aria-label="Tune afspelen">De Slimste <span>Dieuwke</span><small>21 JAAR · DINER-EDITIE</small></div>
     <div class="tabs">
-      <button class="btn" id="tuneBtn" aria-label="Begintune afspelen of stoppen">♪ Tune</button>
+      <button class="btn" id="tuneBtn" aria-label="Tune afspelen of stoppen">♪ Tune</button>
       <button class="btn" id="tabPlay" aria-pressed="true">Spelen</button>
       <button class="btn" id="tabEdit" aria-pressed="false">Vragen bewerken</button>
     </div>
@@ -165,9 +174,10 @@ textarea{min-height:140px;resize:vertical}
       <div id="teams" style="display:flex;flex-direction:column;gap:10px"></div>
       <div class="clock">
         <button class="btn primary" id="clockBtn">Start klok</button>
+        <button class="btn" id="uitlegBtn">Uitleg</button>
         <button class="btn" id="nextTeam">Volgend team</button>
       </div>
-      <p class="hint">Spatiebalk = klok start/stop. Op 0 seconden: shotje.</p>
+      <p class="hint">Spatiebalk = klok start/stop. Uitleg = klok stopt en de uitleg komt terug. Op 0 seconden: shotje.</p>
     </aside>
   </section>
 
@@ -223,16 +233,16 @@ Wat zegt Dieuwke altijd als ze een paar drankjes op heeft? | [invullen]`,
   od:`Koen | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
 Koen | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
 Koen | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
-  pz:`Hockey: Stick, Cirkel, Strafcorner, Scheenbeschermer
-Karaoke: Microfoon, Refrein, Valse noot, Duet
-Een avond stappen met Dieuwke: Kater, Shotje, Kopstootje, Afterparty`,
-  il:`Waar is dit? | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
+  pz:`21: Dieuwke, Dobbelsteen, Chique, Vandaag
+Stan: Deur, Trainer, Rits, Schat
+Suzan & Freek: Vonk, Slapeloosheid, Zingen, Avond`,
+  il:`Waar is dit? | Hans & Grietje; Boterlap; Malaga; Hockey; Kees; Ome Co; Albu`,
   cg:`Fragment van Dieuw | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
   fi:''
 };
 const KEY='slimste-dieuwke-v2';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.data)return s}catch(e){}return null}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{talk:G.talk,gal:G.gal,pass:G.pass,teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{started:G.started,talk:G.talk,gal:G.gal,pass:G.pass,teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
 
 const saved=load();
 let data=saved?saved.data:{...DEFAULT};
@@ -247,11 +257,16 @@ Beste vriendin | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`)dat
 if(data.od&&data.od.trim()===`Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
 Hockeyteam | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
 Beste vriendin | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`)data.od=DEFAULT.od;
+if(data.pz&&data.pz.startsWith('Hockey: Stick, Cirkel, Strafcorner, Scheenbeschermer'))data.pz=DEFAULT.pz;
+if(data.pz&&data.pz.includes('Goud, Weekend, Blauwe dag, Avond'))data.pz=data.pz.replace('Goud, Weekend, Blauwe dag, Avond','Goud, Slapeloosheid, Blauwe dag, Avond');
+if(data.pz&&data.pz.includes('Hockey: Stick, Cirkel, Strafcorner, Keeper'))data.pz=DEFAULT.pz;
+if(data.il&&data.il.trim()==='Waar is dit? | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]')data.il=DEFAULT.il;
+if(data.pz&&data.pz.includes('Goud, Slapeloosheid, Blauwe dag, Avond'))data.pz=data.pz.replace('Goud, Slapeloosheid, Blauwe dag, Avond','Vonk, Slapeloosheid, Zingen, Avond');
 const photos={};
 let G;
 function freshGame(){
   const names=data.teams.split('\n').map(s=>s.trim()).filter(Boolean);
-  return {gal:{},pass:{},od:{used:[],cur:null,phase:'choose'},teams:(names.length?names:['Team 1','Team 2']).map(n=>({name:n,sec:+data.start||60})),active:0,round:0,q:{},found:{},q369:{idx:0,done:[]},running:false};
+  return {q369x:0,gal:{},pass:{},od:{used:[],cur:null,phase:'choose'},teams:(names.length?names:['Team 1','Team 2']).map(n=>({name:n,sec:+data.start||60})),active:0,round:0,q:{},found:{},q369:{idx:0,done:[]},running:false};
 }
 G=freshGame();
 if(saved&&saved.game&&saved.game.teams&&!migrated){Object.assign(G,saved.game);G.running=false}
@@ -279,7 +294,7 @@ function toggleFound(key,apply,undo){
 /* rendering */
 function renderRounds(){
   const nav=$('rounds');nav.innerHTML='';
-  ROUNDS.forEach((r,i)=>{const b=el('button','btn sm',r.name);b.setAttribute('aria-pressed',i===G.round);b.onclick=()=>{G.round=i;stopClock();persist();render()};nav.append(b)});
+  ROUNDS.forEach((r,i)=>{const b=el('button','btn sm',r.name);b.setAttribute('aria-pressed',i===G.round);b.onclick=()=>{stopClock();closeBig();G.peek=false;G.round=i;G.started=G.started||{};G.started[r.id]=false;persist();render()};nav.append(b)});
 }
 function renderTeams(){
   const box=$('teams');box.innerHTML='';
@@ -313,17 +328,27 @@ function render369(stage,r){
   const dots=el('div','dots');
   qs.forEach((_,i)=>{const d=el('div','dot'+(i===s.idx?' cur':'')+(s.done.includes(i)?' done':''),i+1);dots.append(d)});
   stage.append(el('div','eyebrow',`3-6-9 · vraag ${Math.min(s.idx+1,qs.length)} van ${qs.length}`+(G.teams.length>1?` · ${G.teams[G.active].name} is aan de beurt`:'')),dots);
-  if(s.idx>=qs.length){stage.append(el('div','question','Ronde klaar! Door naar Open Deur.'));const b=el('button','btn sm','Ronde opnieuw');b.onclick=()=>{G.q369={idx:0,done:[]};persist();render()};stage.append(b);return}
+  s.good=s.good||[];s.bad=s.bad||[];
+  if(s.idx>=qs.length){
+    if(G.running)stopClock();
+    stage.append(el('div','question','Ronde klaar!'));
+    const sc=el('div','score369');
+    const g=el('div','sc good');g.append(el('span','num',s.good.length),el('span','lbl','goed'));
+    const f=el('div','sc bad');f.append(el('span','num',s.bad.length),el('span','lbl','fout'));
+    sc.append(g,f);stage.append(sc);
+    stage.append(el('p','hint',`Dat is +${s.good.length*10} seconden. Door naar Open Deur!`));
+    const b=el('button','btn sm','Ronde opnieuw');b.onclick=()=>{G.q369={idx:0,done:[],good:[],bad:[]};persist();render()};stage.append(b);return}
   const q=qs[s.idx];
   stage.append(el('div','question',q.q));
-  const ans=el('div','answer',q.a);ans.hidden=!s.show;stage.append(ans);
+  const ans=el('div','answer',q.a);ans.hidden=!(s.show||G.peek);stage.append(ans);
   const row=el('div','row');
   const show=el('button','btn',s.show?'Verberg antwoord':'Toon antwoord');show.onclick=()=>{s.show=!s.show;persist();render()};
-  const good=el('button','btn good','Goed (+10)');good.onclick=()=>{ding();addSec(G.active,10);s.done.push(s.idx);s.idx++;s.show=false;persist();render()};
+  const good=el('button','btn good','Goed (+10)');good.onclick=()=>{ding();addSec(G.active,10);s.good.push(s.idx);s.done.push(s.idx);s.idx++;if(s.idx>=qs.length)stopClock();s.show=false;persist();render()};
   const solo=G.teams.length===1;
-  const bad=el('button','btn bad',solo?'Fout':'Fout, volgend team');bad.onclick=()=>{if(solo){s.done.push(s.idx);s.idx++}else G.active=(G.active+1)%G.teams.length;s.show=false;persist();render()};
+  const bad=el('button','btn bad',solo?'Fout':'Fout, volgend team');bad.onclick=()=>{if(solo){s.bad.push(s.idx);s.done.push(s.idx);s.idx++;if(s.idx>=qs.length)stopClock()}else G.active=(G.active+1)%G.teams.length;s.show=false;persist();render()};
   const skip=el('button','btn sm','Niemand wist het, volgende vraag');skip.onclick=()=>{s.done.push(s.idx);s.idx++;s.show=false;G.active=(G.active+1)%G.teams.length;persist();render()};
-  row.append(show,good,bad);if(!solo)row.append(el('span','spacer'),skip);stage.append(row);
+  const pk=el('button','btn sm',G.peek?'Antwoorden verbergen':'Spiekmodus (alleen voor de quizmaster)');pk.onclick=()=>{G.peek=!G.peek;render()};
+  row.append(show,good,bad,el('span','spacer'));if(!solo)row.append(skip);row.append(pk);stage.append(row);
 }
 function renderItems(stage,r){
   const qs=r.type==='finale'?parseItems(data.fi):parseItems(data[r.id]);
@@ -451,6 +476,22 @@ function renderOpenDeur(stage,r){
   row.append(el('span','hint','Klik een deur: de video wordt groot en speelt met geluid. Daarna start de klok automatisch.'),el('span','spacer'),reset);
   stage.append(row);
 }
+const UITLEG={
+  r369:{title:'3-6-9',pts:['Er volgen 15 open vragen over Dieuwke.','Elk goed antwoord levert +10 seconden op.','Fout? Dan gaan we gewoon door naar de volgende vraag.'],btn:'Start klok',clock:true},
+  od:{title:'Open Deur',pts:['Kies één van de 3 deuren.','Achter de deur zit een filmpje van ene Koen met een vraag over een bepaald onderwerp.','Na het filmpje start de klok: noem zoveel mogelijk van de 5 antwoorden.','Elk goed antwoord levert +20 seconden op.','Extra: bonusvraag aan het einde!'],btn:'Start klok',clock:true},
+  pz:{title:'De Puzzel',pts:['In het rooster staan 12 woorden.','Telkens 4 woorden horen bij hetzelfde onderwerp. Er zijn dus 3 onderwerpen.','Noem de onderwerpen. Elk goed onderwerp levert +40 seconden op.','Pas op: sommige woorden lijken bij meer onderwerpen te passen.','De klok loopt zolang je zoekt.'],btn:'Start klok',clock:true},
+  il:{title:'Galerij',pts:['Je krijgt foto’s van Dieuwke te zien.','Bij elke foto de vraag: waar is dit?','Elk goed antwoord levert +15 seconden op.','De klok loopt zolang je kijkt.'],btn:'Start klok',clock:true},
+  cg:{title:'Collectief Geheugen',pts:['Je krijgt een filmpje te zien.','Bedenk daarna 5 woorden die je erbij vindt passen.','Komen ze overeen met onze termen? Dan krijg je seconden.','Eerste term +10, dan +20, +30, +40 en +50 seconden.'],btn:'Start klok',clock:true},
+  fi:{title:'Finale',pts:['Praat al je resterende seconden vol.','Je mag geen “ja”, “nee” of “uh” zeggen.','Elke 2 fouten = een shotje.'],btn:'Start klok',clock:true}
+};
+function renderUitleg(stage,r){
+  const u=UITLEG[r.id];const box=el('div','uitleg');
+  box.append(el('div','eyebrow','Uitleg'),el('div','question',u.title));
+  const ul=el('ul');u.pts.forEach(t=>ul.append(el('li',null,t)));box.append(ul);
+  const go=el('button','btn primary',u.btn);
+  go.onclick=()=>startClock();
+  box.append(go);stage.append(box);
+}
 const GAL_PHOTOS={0:[1,2,3,4,5,6,7].map(n=>`gallery/gallery-${n}.jpg`)};
 function renderGallery(stage,r){
   const qs=parseItems(data.il);
@@ -474,7 +515,7 @@ function renderGallery(stage,r){
   const k=`il-${si}-${idx}`;
   if(pics[idx]){const img=el('img','galimg');img.src=pics[idx];img.alt='Foto '+(idx+1);stage.append(img)}
   else stage.append(el('div','note',`Nog geen foto voor nummer ${idx+1}.`));
-  const ans=el('div','answer',q.answers[idx]||'');ans.hidden=!(G.peek||G.found[k]||G.pass[k]);stage.append(ans);
+  const ans=el('div','answer',q.answers[idx]||'');ans.hidden=!G.peek;stage.append(ans);
   const go=d=>{G.gal[si]=Math.max(0,idx+d);persist();render()};
   const row=el('div','row');
   if(G.found[k]){const u=el('button','btn sm','Goed ongedaan maken');u.onclick=()=>{addSec(G.found[k].team,-G.found[k].pts);delete G.found[k];persist();render()};row.append(u)}
@@ -509,6 +550,8 @@ function renderTalk(stage,r){
 function renderStage(){
   const stage=$('stage');stage.innerHTML='';
   const r=ROUNDS[G.round];
+  G.started=G.started||{};
+  if(UITLEG[r.id]&&!G.started[r.id]){renderUitleg(stage,r);return}
   if(r.type==='369')render369(stage,r);
   else if(r.type==='puzzel')renderPuzzel(stage,r);
   else if(r.type==='opendeur')renderOpenDeur(stage,r);
@@ -527,6 +570,7 @@ function hush(except){
   if(perc!==except&&!perc.paused)perc.pause();
   if(typeof bel!=='undefined'&&bel!==except&&!bel.paused)bel.pause();
   if(typeof tune2!=='undefined'&&tune2!==except&&!tune2.paused)tune2.pause();
+  if(typeof orkest!=='undefined'&&orkest!==except&&!orkest.paused)orkest.pause();
   document.querySelectorAll('video').forEach(v=>{if(v!==except&&!v.paused)v.pause()});
 }
 document.addEventListener('play',e=>{if(e.target&&e.target.tagName==='VIDEO'&&!e.target.muted)hush(e.target)},true);
@@ -544,9 +588,10 @@ $('introLogo').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault()
 $('introNext').onclick=()=>{$('intro').hidden=true};
 $('logo').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playTune2()}};
 function percOff(){perc.pause();perc.currentTime=0}
-function startClock(){if(G.running)return;G.running=true;percOn();tick=setInterval(()=>{const t=G.teams[G.active];t.sec=Math.max(0,t.sec-1);if(t.sec===0){stopClock();if(ROUNDS[G.round].type==='talk')showDone();else showShot(t.name)}persist();renderTeams();if(ROUNDS[G.round].type==='talk')renderStage()},1000);renderTeams()}
+function startClock(){if(G.running)return;{G.started=G.started||{};const rid=ROUNDS[G.round].id;if(!G.started[rid]){G.started[rid]=true;persist();renderStage()}}G.running=true;percOn();tick=setInterval(()=>{const t=G.teams[G.active];t.sec=Math.max(0,t.sec-1);if(t.sec===0){stopClock();if(ROUNDS[G.round].type==='talk')showDone();else showShot(t.name)}persist();renderTeams();if(ROUNDS[G.round].type==='talk')renderStage()},1000);renderTeams()}
 function stopClock(){if(G.running)percOff();G.running=false;clearInterval(tick);tick=null;renderTeams()}
 $('clockBtn').onclick=()=>G.running?stopClock():startClock();
+$('uitlegBtn').onclick=()=>{stopClock();closeBig();G.started=G.started||{};G.started[ROUNDS[G.round].id]=false;persist();renderStage()};
 $('nextTeam').onclick=()=>{stopClock();G.active=(G.active+1)%G.teams.length;persist();render()};
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&$('intro').hidden&&!document.querySelector('.big')&&!e.target.closest('textarea,input,button,video')&&!$('viewPlay').hidden){e.preventDefault();G.running?stopClock():startClock()}});
 function showDone(){$('shot').querySelector('h2').textContent='Klaar!';$('shotWho').textContent='Gefeliciteerd Dieuwke, je bent de Slimste Mens!';$('shot').hidden=false}
@@ -590,12 +635,15 @@ loadVideos();
 /* begintune: speelt bij laden; blokkeert de browser dat, dan bij de eerste klik of toets */
 const tune=new Audio('audio/begintune.mp3');tune.preload='auto';
 let tuneWaiting=false;
-function setTuneBtn(){$('tuneBtn').textContent=tune.paused?'♪ Tune':'■ Stop tune'}
+const orkest=new Audio('audio/orkest.mp3');orkest.preload='auto';
+function setTuneBtn(){$('tuneBtn').textContent=orkest.paused?'♪ Tune':'■ Stop tune'}
+function playOrkest(){hush(orkest);orkest.currentTime=0;orkest.play().catch(()=>{})}
+orkest.onended=setTuneBtn;orkest.onpause=setTuneBtn;orkest.onplay=setTuneBtn;
 function playTune(){hush(tune);tune.currentTime=0;tune.play().then(()=>{tuneWaiting=false;setTuneBtn()}).catch(()=>{tuneWaiting=true})}
-tune.onended=setTuneBtn;tune.onpause=setTuneBtn;tune.onplay=setTuneBtn;
+
 const firstGesture=e=>{if(tuneWaiting&&!(e.target&&e.target.closest&&e.target.closest('#tuneBtn,#logo,#introLogo'))){playTune()}document.removeEventListener('pointerdown',firstGesture,true);document.removeEventListener('keydown',firstGesture,true)};
 document.addEventListener('pointerdown',firstGesture,true);document.addEventListener('keydown',firstGesture,true);
-$('tuneBtn').onclick=()=>{if(tune.paused)playTune();else tune.pause()};
+$('tuneBtn').onclick=()=>{if(orkest.paused)playOrkest();else orkest.pause()};
 playTune();
 </script>
 
