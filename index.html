@@ -23,9 +23,15 @@
 html,body{height:100%}
 body{background:var(--turf-deep);color:var(--chalk);font-family:var(--body);font-size:16px;line-height:1.45;
   background-image:radial-gradient(ellipse 80% 60% at 50% 40%, #a80404, var(--turf-deep) 100%);background-attachment:fixed;}
-.wrap{max-width:1280px;margin:0 auto;padding-inline:16px;padding-block:16px 32px;display:flex;flex-direction:column;gap:16px}
+.wrap{max-width:1360px;margin:0 auto;padding-inline:clamp(20px,4vw,64px);padding-block:clamp(24px,4vw,56px);display:flex;flex-direction:column;gap:20px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .logo{font-family:var(--display);font-weight:400;transform:skewY(-3deg);font-size:clamp(28px,4.5vw,44px);line-height:.9;text-transform:uppercase;letter-spacing:.01em}
+.logo{cursor:pointer;user-select:none}
+.intro{position:fixed;inset:0;z-index:12;background:inherit;background-color:var(--turf-deep);background-image:radial-gradient(ellipse 80% 60% at 50% 40%, #a80404, var(--turf-deep) 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,3vh,32px);padding:clamp(20px,4vw,64px);padding-top:calc(env(safe-area-inset-top,0px) + clamp(20px,4vw,64px));padding-bottom:calc(env(safe-area-inset-bottom,0px) + clamp(20px,4vw,64px));overflow:auto}
+.intro-logo{font-size:clamp(40px,7vw,88px);text-align:center}
+.intro-logo small{font-size:clamp(13px,1.4vw,18px)}
+.intro-img{width:auto;height:auto;max-width:min(100%,1000px);max-height:58vh;border-radius:18px;border:4px solid var(--ball);box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.intro-next{font-size:20px;padding:14px 32px}
 .logo span{color:var(--ball)}
 .logo small{display:block;font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:.14em;color:var(--chalk-dim);margin-top:6px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}
@@ -93,6 +99,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .mini{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:640px){.mini{grid-template-columns:1fr}}
 .mini video{width:100%;border-radius:12px;border:3px solid var(--ball);background:#000}
+.host{align-self:flex-start;background:var(--ball);color:var(--turf);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:999px}
+.talkbig{font-family:var(--display);font-size:clamp(120px,22vw,240px);line-height:.9;color:var(--ball);font-variant-numeric:tabular-nums;text-align:center}
+.talkerr{font-size:22px;font-weight:700}
 .galimg{max-width:100%;max-height:62vh;border-radius:14px;border:4px solid var(--ball);object-fit:contain;align-self:center;background:#000}
 .photo{max-width:100%;max-height:340px;border-radius:14px;border:1px solid var(--line);object-fit:contain;align-self:flex-start}
 .upload{font-size:14px;color:var(--chalk-dim)}
@@ -132,10 +141,16 @@ textarea{min-height:140px;resize:vertical}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--ball);color:var(--turf);padding:10px 18px;border-radius:999px;font-weight:700;z-index:20}
 </style>
 
+<section class="intro" id="intro" aria-label="Welkom">
+  <div class="logo intro-logo" id="introLogo" role="button" tabindex="0" aria-label="Tune afspelen">De Slimste <span>Dieuwke</span><small>21 JAAR · DINER-EDITIE</small></div>
+  <img class="intro-img" src="img/groep.jpg" alt="De vriendengroep in de studio">
+  <button class="btn primary intro-next" id="introNext">Volgende →</button>
+</section>
 <div class="wrap">
   <header>
-    <div class="logo">De Slimste <span>Dieuwke</span><small>21 JAAR · DINER-EDITIE</small></div>
+    <div class="logo" id="logo" role="button" tabindex="0" aria-label="Tune afspelen">De Slimste <span>Dieuwke</span><small>21 JAAR · DINER-EDITIE</small></div>
     <div class="tabs">
+      <button class="btn" id="tuneBtn" aria-label="Begintune afspelen of stoppen">♪ Tune</button>
       <button class="btn" id="tabPlay" aria-pressed="true">Spelen</button>
       <button class="btn" id="tabEdit" aria-pressed="false">Vragen bewerken</button>
     </div>
@@ -180,49 +195,44 @@ textarea{min-height:140px;resize:vertical}
 
 <script>
 const ROUNDS=[
-  {id:'r369',name:'3-6-9',type:'369',fmt:'Eén vraag per regel: <code>vraag | antwoord</code>. Bij vraag 3, 6, 9, 12 en 15 levert een goed antwoord 10 seconden op.'},
-  {id:'od',name:'Open Deur',type:'opendeur',fmt:'3 regels = 3 deuren: <code>wie stelt de vraag | antw1; …; antw5</code>. De video’s worden door Claude toegevoegd. Elk gevonden antwoord: 20 seconden.'},
-  {id:'pz',name:'Puzzel',type:'puzzel',fmt:'Per regel één verband: <code>verband: woord, woord, woord, woord</code>. 3 regels = 1 puzzel. Lege regel tussen puzzels. Elk verband: 30 seconden.'},
-  {id:'il',name:'Gallery',type:'gallery',fmt:'Per regel één fotoserie: <code>onderwerp | antwoord foto 1; antwoord foto 2; …</code>. De foto’s worden door Claude toegevoegd, op dezelfde volgorde. Elke goed geraden foto: 10 seconden.'},
-  {id:'cg',name:'Collectief Geheugen',type:'items',pts:(n)=>(n+1)*10,photo:true,fmt:'Per regel: <code>omschrijving | trefwoord; trefwoord; …</code> (5 stuks). Eerste vondst 10 s, dan 20, 30, 40, 50. Foto toevoegen kan tijdens het spelen.'},
-  {id:'fi',name:'Finale',type:'finale',fmt:'Per regel: <code>vraag | antw1; …; antw5</code>. Met één team: elk gevonden antwoord +20 seconden. Met meer teams: −20 seconden bij de andere teams.'}
+  {id:'r369',name:'3-6-9',host:'Jimi',type:'369',fmt:'Eén vraag per regel: <code>vraag | antwoord</code>. 15 vragen. Elk goed antwoord: +10 seconden.'},
+  {id:'od',name:'Open Deur',host:'Koen',type:'opendeur',fmt:'3 regels = 3 deuren (alle drie hetzelfde filmpje van Koen): <code>naam op de deur | antw1; …; antw5</code>. Elk gevonden antwoord: +20 seconden.'},
+  {id:'pz',name:'Puzzel',host:'Boris',type:'puzzel',fmt:'Per regel één onderwerp: <code>onderwerp: woord, woord, woord, woord</code>. 3 regels = 12 woorden. Elk geraden onderwerp: +40 seconden.'},
+  {id:'il',name:'Galerij',host:'Hidde',type:'gallery',fmt:'<code>vraag | antwoord foto 1; antwoord foto 2; …</code>. De foto’s worden door Claude toegevoegd, op dezelfde volgorde. Elk goed antwoord: +15 seconden.'},
+  {id:'cg',name:'Collectief Geheugen',host:null,type:'items',pts:(n)=>(n+1)*10,video:true,fmt:'<code>omschrijving fragment | term; term; term; term; term</code>. Het filmpje wordt door Claude toegevoegd. Eerste term +10 s, dan 20, 30, 40, 50.'},
+  {id:'fi',name:'Finale',host:null,type:'talk',noEdit:true,fmt:''}
 ];
 const DEFAULT={
   teams:'Team Dieuwke',
   start:60,
-  r369:`Hoeveel spelers staan er per team op het veld bij hockey? | 11 (inclusief keeper)
-Op welke datum is Dieuwke jarig? | [invullen]
-Met welke kant van de stick mag je de bal spelen? | Alleen met de platte kant
+  r369:`Op welke datum is Dieuwke jarig? | [invullen]
+Bij welke hockeyclub speelt Dieuwke? | [invullen]
+Op welke positie staat Dieuwke in het veld? | [invullen]
 Welk nummer zingt Dieuwke altijd keihard mee? | [invullen]
-In welk land mag je pas vanaf 21 jaar alcohol drinken? | Verenigde Staten
-Hoe heet de hockeyclub van Dieuwke? | [invullen]
-Welk land won goud bij de vrouwen op het Olympisch hockeytoernooi van 2024? | Nederland
 Wat is Dieuwke's vaste drankje op een feest? | [invullen]
-Waar bestaat een kopstootje uit? | Een biertje en een jenevertje
-Op welke positie speelt Dieuwke? | [invullen]
-Uit hoeveel kwarten bestaat een hockeywedstrijd? | 4 kwarten van 15 minuten
-Van welke artiest is Dieuwke stiekem fan, maar geeft ze dat nooit toe? | [invullen]
-Hoe heet het gebied waarbinnen je moet staan om te mogen scoren? | De cirkel (slagcirkel)
+Wat is Dieuwke's lievelingseten? | [invullen]
+Wat was Dieuwke's eerste bijbaantje? | [invullen]
+Hoe heet Dieuwke's beste vriendin? | [invullen]
+Wat is Dieuwke's favoriete vakantiebestemming? | [invullen]
+Welke serie heeft Dieuwke het vaakst gebingewatcht? | [invullen]
+Wat is Dieuwke's grootste guilty pleasure? | [invullen]
 Om welk moment moet Dieuwke nu nog steeds keihard lachen? | [invullen]
-In welk jaar is Dieuwke geboren? | 2005`,
-  od:`Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
-Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
-Mama | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
+Welke artiest zou Dieuwke het liefst nog live zien? | [invullen]
+In welke kroeg of club is Dieuwke het vaakst te vinden? | [invullen]
+Wat zegt Dieuwke altijd als ze een paar drankjes op heeft? | [invullen]`,
+  od:`Koen | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Koen | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
+Koen | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
   pz:`Hockey: Stick, Cirkel, Strafcorner, Scheenbeschermer
 Karaoke: Microfoon, Refrein, Valse noot, Duet
 Een avond stappen met Dieuwke: Kater, Shotje, Kopstootje, Afterparty`,
-  il:`Dieuwke op haar best: waar/wanneer was dit? | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
-  cg:`Dieuwke's vorige verjaardag | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
-Het gezelligste hockeyfeest | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]
-Een avond karaoke met de vriendengroep | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
-  fi:`Noem 5 dingen waar Dieuwke blij van wordt | Hockey; Zingen; Feesten; Lachen; [invullen]
-Noem 5 drankspelletjes | Beerpong; Kingsen; Mexen; Ik heb nog nooit; Flip cup
-Noem 5 posities of rollen in een hockeyteam | Keeper; Verdediger; Middenvelder; Spits; Aanvoerder
-Wat zegt Dieuwke als ze aangeschoten is? | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`
+  il:`Waar is dit? | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
+  cg:`Fragment van Dieuw | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
+  fi:''
 };
-const KEY='slimste-dieuwke-v1';
+const KEY='slimste-dieuwke-v2';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.data)return s}catch(e){}return null}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{gal:G.gal,pass:G.pass,teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{talk:G.talk,gal:G.gal,pass:G.pass,teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
 
 const saved=load();
 let data=saved?saved.data:{...DEFAULT};
@@ -262,7 +272,7 @@ const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=
 function addSec(ti,d){G.teams[ti].sec=Math.max(0,G.teams[ti].sec+d)}
 function toggleFound(key,apply,undo){
   if(G.found[key]){undo(G.found[key]);delete G.found[key]}
-  else{G.found[key]=apply()}
+  else{G.found[key]=apply();ding()}
   persist();render();
 }
 
@@ -301,16 +311,15 @@ function nav(r,count){
 function render369(stage,r){
   const qs=parseQA(data.r369);const s=G.q369;
   const dots=el('div','dots');
-  qs.forEach((_,i)=>{const d=el('div','dot'+((i+1)%3===0?' x3':'')+(i===s.idx?' cur':'')+(s.done.includes(i)?' done':''),i+1);dots.append(d)});
+  qs.forEach((_,i)=>{const d=el('div','dot'+(i===s.idx?' cur':'')+(s.done.includes(i)?' done':''),i+1);dots.append(d)});
   stage.append(el('div','eyebrow',`3-6-9 · vraag ${Math.min(s.idx+1,qs.length)} van ${qs.length}`+(G.teams.length>1?` · ${G.teams[G.active].name} is aan de beurt`:'')),dots);
   if(s.idx>=qs.length){stage.append(el('div','question','Ronde klaar! Door naar Open Deur.'));const b=el('button','btn sm','Ronde opnieuw');b.onclick=()=>{G.q369={idx:0,done:[]};persist();render()};stage.append(b);return}
-  const q=qs[s.idx];const bonus=(s.idx+1)%3===0;
+  const q=qs[s.idx];
   stage.append(el('div','question',q.q));
   const ans=el('div','answer',q.a);ans.hidden=!s.show;stage.append(ans);
-  if(bonus)stage.append(el('div','eyebrow','Goed antwoord op deze vraag = +10 seconden'));
   const row=el('div','row');
   const show=el('button','btn',s.show?'Verberg antwoord':'Toon antwoord');show.onclick=()=>{s.show=!s.show;persist();render()};
-  const good=el('button','btn good','Goed');good.onclick=()=>{if(bonus)addSec(G.active,10);s.done.push(s.idx);s.idx++;s.show=false;persist();render()};
+  const good=el('button','btn good','Goed (+10)');good.onclick=()=>{ding();addSec(G.active,10);s.done.push(s.idx);s.idx++;s.show=false;persist();render()};
   const solo=G.teams.length===1;
   const bad=el('button','btn bad',solo?'Fout':'Fout, volgend team');bad.onclick=()=>{if(solo){s.done.push(s.idx);s.idx++}else G.active=(G.active+1)%G.teams.length;s.show=false;persist();render()};
   const skip=el('button','btn sm','Niemand wist het, volgende vraag');skip.onclick=()=>{s.done.push(s.idx);s.idx++;s.show=false;G.active=(G.active+1)%G.teams.length;persist();render()};
@@ -322,12 +331,10 @@ function renderItems(stage,r){
   if(!qs.length){stage.append(el('p','hint','Nog geen vragen voor deze ronde. Voeg ze toe via Vragen bewerken.'));return}
   const qi=Math.min(G.q[r.id]||0,qs.length-1);const q=qs[qi];
   stage.append(el('div','question',q.q));
-  if(r.photo){
-    const pk=r.id+'-'+qi;
-    if(photos[pk]){const img=el('img','photo');img.src=photos[pk];img.alt='Foto bij deze vraag';stage.append(img)}
-    const up=el('label','upload');up.append('Foto bij deze vraag: ');const inp=el('input');inp.type='file';inp.accept='image/*';inp.id='up-'+pk;
-    inp.onchange=()=>{const f=inp.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{photos[pk]=fr.result;render()};fr.readAsDataURL(f)};
-    up.append(inp);stage.append(up);
+  if(r.video){
+    const src=CG_VIDS[qi];
+    if(src){const v=el('video','galimg');v.src=src;v.controls=true;v.playsInline=true;v.style.width='min(100%,900px)';stage.append(v)}
+    else stage.append(el('div','note','Het filmpje volgt nog.'));
   }
   const peek=!!G.peek;
   const chips=el('div','chips');
@@ -357,7 +364,7 @@ function renderPuzzel(stage,r){
   stage.append(nav(r,pz.length));
   if(!pz.length){stage.append(el('p','hint','Nog geen puzzel. Voeg er een toe via Vragen bewerken.'));return}
   const pi=Math.min(G.q[r.id]||0,pz.length-1);const p=pz[pi];
-  stage.append(el('div','question','Zoek de 3 verbanden'));
+  stage.append(el('div','question','Zoek de 3 onderwerpen'));
   const words=[];p.forEach((g,gi)=>g.words.forEach(w=>words.push({w,gi})));
   const foundG=gi=>!!G.found[`pz-${pi}-${gi}`];
   const order=shuffled(words,pi+7);
@@ -369,23 +376,24 @@ function renderPuzzel(stage,r){
     const key=`pz-${pi}-${gi}`;const f=G.found[key];
     const c=el('button','chip'+(f?' found g'+(gi%3):'')+(G.peek?' peek':''));
     c.append(el('span','n',gi+1),el('span','t',g.name));
-    if(f)c.append(el('span','pts',`+30 ${G.teams[f.team]?.name||''}`));
-    c.onclick=()=>toggleFound(key,()=>{addSec(G.active,30);return {team:G.active,pts:30}},f=>addSec(f.team,-30));
+    if(f)c.append(el('span','pts','+40'));
+    c.onclick=()=>toggleFound(key,()=>{addSec(G.active,40);return {team:G.active,pts:40}},f=>addSec(f.team,-40));
     conn.append(c);
   });
-  stage.append(el('div','eyebrow','Verbanden · klik als een team het verband noemt'),conn);
-  const pk=el('button','btn sm',G.peek?'Verbanden verbergen':'Spiekmodus (alleen voor de quizmaster)');pk.onclick=()=>{G.peek=!G.peek;render()};
+  stage.append(el('div','eyebrow','Onderwerpen · klik als Dieuwke het onderwerp noemt'),conn);
+  const pk=el('button','btn sm',G.peek?'Onderwerpen verbergen':'Spiekmodus (alleen voor de quizmaster)');pk.onclick=()=>{G.peek=!G.peek;render()};
   const row=el('div','row');row.append(el('span','spacer'),pk);stage.append(row);
 }
 const vids={};
-const BUILTIN_VIDS={0:'videos/mama-1.mp4'};
+const BUILTIN_VIDS={0:'videos/koen.mp4',1:'videos/koen.mp4',2:'videos/koen.mp4'};
+const CG_VIDS={};
 const vsrc=d=>vids['od-'+d]||BUILTIN_VIDS[d]||null;let vdbp=null;
 function vdb(){if(vdbp)return vdbp;vdbp=new Promise((res,rej)=>{try{const q=indexedDB.open('slimste-dieuwke-videos',1);q.onupgradeneeded=()=>q.result.createObjectStore('v');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}});return vdbp}
 async function saveVideo(key,file){if(vids[key])URL.revokeObjectURL(vids[key]);vids[key]=URL.createObjectURL(file);render();try{const db=await vdb();db.transaction('v','readwrite').objectStore('v').put(file,key)}catch(e){toast('Video werkt nu, maar kon niet worden bewaard voor later')}}
 async function loadVideos(){try{const db=await vdb();const req=db.transaction('v').objectStore('v').openCursor();req.onsuccess=()=>{const c=req.result;if(c){vids[c.key]=URL.createObjectURL(c.value);c.continue()}else render()}}catch(e){}}
 function closeBig(){const b=document.querySelector('.big');if(b){const v=b.querySelector('video');if(v)v.pause();b.remove()}}
 function openDoorVideo(d,name){
-  closeBig();
+  closeBig();hush();
   const ov=el('div','big');const h=el('h3',null,name);
   const v=el('video');v.src=vsrc(d);v.controls=true;v.playsInline=true;
   const btn=el('button','btn primary','Klaar, start de tijd');
@@ -399,7 +407,7 @@ function renderOpenDeur(stage,r){
   G.od=G.od||{used:[],cur:null,phase:'choose'};const od=G.od;
   if(od.phase==='answer'&&od.cur!=null&&doors[od.cur]){
     const d=od.cur,door=doors[d];
-    stage.append(el('div','eyebrow',`Open Deur · vraag van ${door.q}`));
+    stage.append(el('div','eyebrow',`Open Deur · filmpje van ${door.q}`));
     const mini=el('div','mini');
     const left=el('div');
     if(vsrc(d)){const v=el('video');v.src=vsrc(d);v.controls=true;v.muted=false;v.playsInline=true;left.append(v)}
@@ -471,7 +479,7 @@ function renderGallery(stage,r){
   const row=el('div','row');
   if(G.found[k]){const u=el('button','btn sm','Goed ongedaan maken');u.onclick=()=>{addSec(G.found[k].team,-G.found[k].pts);delete G.found[k];persist();render()};row.append(u)}
   else{
-    const good=el('button','btn good','Goed (+10)');good.onclick=()=>{G.found[k]={team:G.active,pts:10};delete G.pass[k];addSec(G.active,10);go(1)};
+    const good=el('button','btn good','Goed (+15)');good.onclick=()=>{ding();G.found[k]={team:G.active,pts:15};delete G.pass[k];addSec(G.active,15);go(1)};
     const pass=el('button','btn bad','Pas');pass.onclick=()=>{G.pass[k]=true;go(1)};
     row.append(good,pass);
   }
@@ -480,6 +488,24 @@ function renderGallery(stage,r){
   const pk=el('button','btn sm',G.peek?'Antwoord verbergen':'Spiekmodus');pk.onclick=()=>{G.peek=!G.peek;render()};
   row.append(el('span','spacer'),prev,next,pk);stage.append(row);
 }
+function renderTalk(stage,r){
+  G.talk=G.talk||{errors:0};const t=G.teams[G.active];
+  stage.append(el('div','eyebrow','Finale'));
+  stage.append(el('div','question','Praat je resterende seconden vol zonder “ja”, “nee” of “uh” te zeggen!'));
+  stage.append(el('p','hint','Elke 2 fouten = een shotje.'));
+  const big=el('div','talkbig',t.sec);stage.append(big);
+  const meta=el('div','row');
+  const errs=el('div','talkerr',`Fouten: ${G.talk.errors}`);
+  meta.append(errs);stage.append(meta);
+  const row=el('div','row');
+  const go=el('button','btn primary',G.running?'Pauze':(t.sec>0?'Start':'Klaar'));go.disabled=t.sec===0&&!G.running;
+  go.onclick=()=>{G.running?stopClock():startClock();render()};
+  const fout=el('button','btn bad','Fout! (ja / nee / uh)');
+  fout.onclick=()=>{G.talk.errors++;persist();if(G.talk.errors%2===0){$('shot').querySelector('h2').textContent='Shotje!';$('shotWho').textContent=`${G.talk.errors} fouten — drinken!`;$('shot').hidden=false}render()};
+  const undo=el('button','btn sm','Fout ongedaan');undo.onclick=()=>{G.talk.errors=Math.max(0,G.talk.errors-1);persist();render()};
+  const reset=el('button','btn sm','Fouten op 0');reset.onclick=()=>{G.talk.errors=0;persist();render()};
+  row.append(go,fout,el('span','spacer'),undo,reset);stage.append(row);
+}
 function renderStage(){
   const stage=$('stage');stage.innerHTML='';
   const r=ROUNDS[G.round];
@@ -487,25 +513,51 @@ function renderStage(){
   else if(r.type==='puzzel')renderPuzzel(stage,r);
   else if(r.type==='opendeur')renderOpenDeur(stage,r);
   else if(r.type==='gallery')renderGallery(stage,r);
+  else if(r.type==='talk')renderTalk(stage,r);
   else renderItems(stage,r);
 }
 function render(){renderRounds();renderTeams();renderStage()}
 
 /* clock */
 let tick=null;
-function startClock(){if(G.running)return;G.running=true;tick=setInterval(()=>{const t=G.teams[G.active];t.sec=Math.max(0,t.sec-1);if(t.sec===0){stopClock();showShot(t.name)}persist();renderTeams()},1000);renderTeams()}
-function stopClock(){G.running=false;clearInterval(tick);tick=null;renderTeams()}
+const perc=new Audio('audio/percussie.mp3');perc.preload='auto';perc.loop=true;
+/* altijd maar één geluid tegelijk */
+function hush(except){
+  try{if(typeof tune!=='undefined'&&tune!==except&&!tune.paused)tune.pause()}catch(e){}
+  if(perc!==except&&!perc.paused)perc.pause();
+  if(typeof bel!=='undefined'&&bel!==except&&!bel.paused)bel.pause();
+  if(typeof tune2!=='undefined'&&tune2!==except&&!tune2.paused)tune2.pause();
+  document.querySelectorAll('video').forEach(v=>{if(v!==except&&!v.paused)v.pause()});
+}
+document.addEventListener('play',e=>{if(e.target&&e.target.tagName==='VIDEO'&&!e.target.muted)hush(e.target)},true);
+function percOn(){hush(perc);perc.play().catch(()=>{})}
+/* belgeluid bij goed antwoord: zet even al het andere geluid uit, daarna gaat de percussie verder als de klok nog loopt */
+const bel=new Audio('audio/bel.mp3');bel.preload='auto';
+function ding(){hush(bel);bel.currentTime=0;bel.play().catch(()=>{})}
+bel.onended=()=>{if(G.running)perc.play().catch(()=>{})};
+/* tune 2: klik op het logo */
+const tune2=new Audio('audio/tune2.mp3');tune2.preload='auto';
+function playTune2(){hush(tune2);tune2.currentTime=0;tune2.play().catch(()=>{})}
+$('logo').onclick=playTune2;
+$('introLogo').onclick=playTune2;
+$('introLogo').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playTune2()}};
+$('introNext').onclick=()=>{$('intro').hidden=true};
+$('logo').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playTune2()}};
+function percOff(){perc.pause();perc.currentTime=0}
+function startClock(){if(G.running)return;G.running=true;percOn();tick=setInterval(()=>{const t=G.teams[G.active];t.sec=Math.max(0,t.sec-1);if(t.sec===0){stopClock();if(ROUNDS[G.round].type==='talk')showDone();else showShot(t.name)}persist();renderTeams();if(ROUNDS[G.round].type==='talk')renderStage()},1000);renderTeams()}
+function stopClock(){if(G.running)percOff();G.running=false;clearInterval(tick);tick=null;renderTeams()}
 $('clockBtn').onclick=()=>G.running?stopClock():startClock();
 $('nextTeam').onclick=()=>{stopClock();G.active=(G.active+1)%G.teams.length;persist();render()};
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&!document.querySelector('.big')&&!e.target.closest('textarea,input,button,video')&&!$('viewPlay').hidden){e.preventDefault();G.running?stopClock():startClock()}});
-function showShot(name){$('shotWho').textContent=`${name} staat op 0 seconden`;$('shot').hidden=false}
-$('shotOk').onclick=()=>{$('shot').hidden=true};
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&$('intro').hidden&&!document.querySelector('.big')&&!e.target.closest('textarea,input,button,video')&&!$('viewPlay').hidden){e.preventDefault();G.running?stopClock():startClock()}});
+function showDone(){$('shot').querySelector('h2').textContent='Klaar!';$('shotWho').textContent='Gefeliciteerd Dieuwke, je bent de Slimste Mens!';$('shot').hidden=false}
+function showShot(name){$('shot').querySelector('h2').textContent='Shotje!';$('shotWho').textContent=`${name} staat op 0 seconden`;$('shot').hidden=false}
+$('shotOk').onclick=()=>{$('shot').hidden=true;$('shot').querySelector('h2').textContent='Shotje!'};
 
 /* editor */
 function fillEditor(){
   $('fTeams').value=data.teams;$('fStart').value=data.start;
   const box=$('roundFields');box.innerHTML='';
-  ROUNDS.forEach(r=>{
+  ROUNDS.filter(r=>!r.noEdit).forEach(r=>{
     const f=el('div','field');const lb=el('label',null,r.name);lb.htmlFor='f-'+r.id;
     const fm=el('div','fmt');fm.innerHTML=r.fmt;
     const ta=el('textarea');ta.id='f-'+r.id;ta.value=data[r.id]||'';ta.style.minHeight=r.id==='r369'?'320px':'160px';
@@ -515,7 +567,7 @@ function fillEditor(){
 function readEditor(){
   const teamsChanged=$('fTeams').value!==data.teams||+$('fStart').value!==+data.start;
   data={teams:$('fTeams').value,start:+$('fStart').value||60};
-  ROUNDS.forEach(r=>data[r.id]=$('f-'+r.id).value);
+  ROUNDS.filter(r=>!r.noEdit).forEach(r=>data[r.id]=$('f-'+r.id).value);
   if(teamsChanged){const keep=G.round;G=freshGame();G.round=keep}
 }
 function toast(msg){const t=el('div','toast',msg);document.body.append(t);setTimeout(()=>t.remove(),1800)}
@@ -535,6 +587,16 @@ $('restoreYes').onclick=()=>{data={...DEFAULT};G=freshGame();persist();fillEdito
 if(G.od&&G.od.phase==='video'){G.od.phase='choose';G.od.cur=null}
 render();
 loadVideos();
+/* begintune: speelt bij laden; blokkeert de browser dat, dan bij de eerste klik of toets */
+const tune=new Audio('audio/begintune.mp3');tune.preload='auto';
+let tuneWaiting=false;
+function setTuneBtn(){$('tuneBtn').textContent=tune.paused?'♪ Tune':'■ Stop tune'}
+function playTune(){hush(tune);tune.currentTime=0;tune.play().then(()=>{tuneWaiting=false;setTuneBtn()}).catch(()=>{tuneWaiting=true})}
+tune.onended=setTuneBtn;tune.onpause=setTuneBtn;tune.onplay=setTuneBtn;
+const firstGesture=e=>{if(tuneWaiting&&!(e.target&&e.target.closest&&e.target.closest('#tuneBtn,#logo,#introLogo'))){playTune()}document.removeEventListener('pointerdown',firstGesture,true);document.removeEventListener('keydown',firstGesture,true)};
+document.addEventListener('pointerdown',firstGesture,true);document.addEventListener('keydown',firstGesture,true);
+$('tuneBtn').onclick=()=>{if(tune.paused)playTune();else tune.pause()};
+playTune();
 </script>
 
 </html>

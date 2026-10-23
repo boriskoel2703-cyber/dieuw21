@@ -1,20 +1,13 @@
 # De Slimste Dieuwke
 
-Een quiz in de stijl van De Slimste Mens voor het 21e verjaardagsdiner van Dieuwke. Eén team: Team Dieuwke, tegen de klok.
+Quiz in de stijl van De Slimste Mens voor het 21e verjaardagsdiner van Dieuwke. Eén team (Team Dieuwke), start op 60 seconden.
 
 ## Rondes
-3-6-9 · Open Deur · Puzzel · Gallery · Collectief Geheugen · Finale
+1. **3-6-9** (Jimi) · 15 vragen, +10 s per goed antwoord
+2. **Open Deur** (Koen) · 3 deuren met hetzelfde filmpje, 5 antwoorden, +20 s per antwoord
+3. **Puzzel** (Boris) · 12 woorden, 3 onderwerpen, +40 s per onderwerp
+4. **Galerij** (Hidde) · "Waar is dit?", +15 s per goed antwoord
+5. **Collectief Geheugen** · filmpje, 5 termen: +10/20/30/40/50 s
+6. **Finale** · resterende seconden volpraten zonder ja/nee/uh, elke 2 fouten een shot
 
-## Gebruik
-1. Open de site (of `index.html` lokaal in Chrome/Safari).
-2. Ga naar **Vragen bewerken**, vul alle `[invullen]`-plekken in en klik **Opslaan en spelen**.
-3. Tijdens het spel:
-   - **Spatiebalk** = klok start/stop.
-   - Klik een antwoord aan als het genoemd wordt (nog een keer klikken = ongedaan maken).
-   - Op 0 seconden: shotje.
-
-Vragen en scores worden opgeslagen in de browser (localStorage). Gebruik op de avond dus dezelfde laptop en browser.
-
-## Online zetten met GitHub Pages
-Settings → Pages → Source: *Deploy from a branch* → Branch: `main` / `(root)` → Save.
-De site staat daarna op `https://<gebruikersnaam>.github.io/slimste-dieuwke/`.
+Spatiebalk = klok start/stop.
