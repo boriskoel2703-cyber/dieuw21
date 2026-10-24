@@ -209,7 +209,6 @@ const ROUNDS=[
   {id:'od',name:'Open Deur',host:'Koen',type:'opendeur',fmt:'3 regels = 3 deuren (alle drie hetzelfde filmpje van Koen): <code>naam op de deur | antw1; …; antw5</code>. Elk gevonden antwoord: +20 seconden.'},
   {id:'pz',name:'Puzzel',host:'Boris',type:'puzzel',fmt:'Per regel één onderwerp: <code>onderwerp: woord, woord, woord, woord</code>. 3 regels = 12 woorden. Elk geraden onderwerp: +40 seconden.'},
   {id:'il',name:'Galerij',host:'Hidde',type:'gallery',fmt:'<code>vraag | antwoord foto 1; antwoord foto 2; …</code>. De foto’s worden door Claude toegevoegd, op dezelfde volgorde. Elk goed antwoord: +15 seconden.'},
-  {id:'cg',name:'Collectief Geheugen',host:null,type:'items',pts:(n)=>(n+1)*10,video:true,fmt:'<code>omschrijving fragment | term; term; term; term; term</code>. Het filmpje wordt door Claude toegevoegd. Eerste term +10 s, dan 20, 30, 40, 50.'},
   {id:'fi',name:'Finale',host:null,type:'talk',noEdit:true,fmt:''}
 ];
 const DEFAULT={
@@ -237,10 +236,9 @@ Koen | Pedagogiek; Didactiek; Taal & spelling; Lesgeven; Onmogelijke rekentoets`
 Stan: Deur, Trainer, Rits, Schat
 Suzan & Freek: Vonk, Slapeloosheid, Zingen, Avond`,
   il:`Waar is dit? | Hans & Grietje; Boterlap; Malaga; Hockey; Kees; Ome Co; Albu`,
-  cg:`Fragment van Dieuw | [invullen]; [invullen]; [invullen]; [invullen]; [invullen]`,
   fi:''
 };
-const KEY='slimste-dieuwke-v3';
+const KEY='slimste-dieuwke-v4';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.data)return s}catch(e){}return null}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{started:G.started,talk:G.talk,gal:G.gal,pass:G.pass,teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
 
@@ -356,11 +354,6 @@ function renderItems(stage,r){
   if(!qs.length){stage.append(el('p','hint','Nog geen vragen voor deze ronde. Voeg ze toe via Vragen bewerken.'));return}
   const qi=Math.min(G.q[r.id]||0,qs.length-1);const q=qs[qi];
   stage.append(el('div','question',q.q));
-  if(r.video){
-    const src=CG_VIDS[qi];
-    if(src){const v=el('video','galimg');v.src=src;v.controls=true;v.playsInline=true;v.style.width='min(100%,900px)';stage.append(v)}
-    else stage.append(el('div','note','Het filmpje volgt nog.'));
-  }
   const peek=!!G.peek;
   const chips=el('div','chips');
   const foundCount=q.answers.filter((_,i)=>G.found[`${r.id}-${qi}-${i}`]).length;
@@ -411,7 +404,6 @@ function renderPuzzel(stage,r){
 }
 const vids={};
 const BUILTIN_VIDS={0:'videos/koen.mp4',1:'videos/koen.mp4',2:'videos/koen.mp4'};
-const CG_VIDS={};
 const vsrc=d=>vids['od-'+d]||BUILTIN_VIDS[d]||null;let vdbp=null;
 function vdb(){if(vdbp)return vdbp;vdbp=new Promise((res,rej)=>{try{const q=indexedDB.open('slimste-dieuwke-videos',1);q.onupgradeneeded=()=>q.result.createObjectStore('v');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}});return vdbp}
 async function saveVideo(key,file){if(vids[key])URL.revokeObjectURL(vids[key]);vids[key]=URL.createObjectURL(file);render();try{const db=await vdb();db.transaction('v','readwrite').objectStore('v').put(file,key)}catch(e){toast('Video werkt nu, maar kon niet worden bewaard voor later')}}
@@ -481,7 +473,6 @@ const UITLEG={
   od:{title:'Open Deur',pts:['Kies één van de 3 deuren.','Achter de deur zit een filmpje van ene Koen met een vraag over een bepaald onderwerp.','Na het filmpje start de klok: noem zoveel mogelijk van de 5 antwoorden.','Elk goed antwoord levert +20 seconden op.','Extra: bonusvraag aan het einde!'],btn:'Start klok',clock:true},
   pz:{title:'De Puzzel',pts:['In het rooster staan 12 woorden.','Telkens 4 woorden horen bij hetzelfde onderwerp. Er zijn dus 3 onderwerpen.','Noem de onderwerpen. Elk goed onderwerp levert +40 seconden op.','Pas op: sommige woorden lijken bij meer onderwerpen te passen.','De klok loopt zolang je zoekt.'],btn:'Start klok',clock:true},
   il:{title:'Galerij',pts:['Je krijgt foto’s van Dieuwke te zien.','Bij elke foto de vraag: waar is dit?','Elk goed antwoord levert +15 seconden op.','De klok loopt zolang je kijkt.'],btn:'Start klok',clock:true},
-  cg:{title:'Collectief Geheugen',pts:['Je krijgt een filmpje te zien.','Bedenk daarna 5 woorden die je erbij vindt passen.','Komen ze overeen met onze termen? Dan krijg je seconden.','Eerste term +10, dan +20, +30, +40 en +50 seconden.'],btn:'Start klok',clock:true},
   fi:{title:'Finale',pts:['Praat al je resterende seconden vol.','Je mag geen “ja”, “nee” of “uh” zeggen.','Elke 2 fouten = een shotje.'],btn:'Start klok',clock:true}
 };
 function renderUitleg(stage,r){
