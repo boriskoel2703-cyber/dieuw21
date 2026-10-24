@@ -214,21 +214,21 @@ const ROUNDS=[
 const DEFAULT={
   teams:'Team Dieuwke',
   start:60,
-  r369:`Op welke datum is Dieuwke jarig? | [invullen]
-Bij welke hockeyclub speelt Dieuwke? | [invullen]
-Op welke positie staat Dieuwke in het veld? | [invullen]
-Welk nummer zingt Dieuwke altijd keihard mee? | [invullen]
-Wat is Dieuwke's vaste drankje op een feest? | [invullen]
-Wat is Dieuwke's lievelingseten? | [invullen]
-Wat was Dieuwke's eerste bijbaantje? | [invullen]
-Hoe heet Dieuwke's beste vriendin? | [invullen]
-Wat is Dieuwke's favoriete vakantiebestemming? | [invullen]
-Welke serie heeft Dieuwke het vaakst gebingewatcht? | [invullen]
-Wat is Dieuwke's grootste guilty pleasure? | [invullen]
-Om welk moment moet Dieuwke nu nog steeds keihard lachen? | [invullen]
-Welke artiest zou Dieuwke het liefst nog live zien? | [invullen]
-In welke kroeg of club is Dieuwke het vaakst te vinden? | [invullen]
-Wat zegt Dieuwke altijd als ze een paar drankjes op heeft? | [invullen]`,
+  r369:`Hoeveel speelsters staan er bij veldhockey per team tegelijk op het veld? | 11
+Hoe heet het gebied voor het doel waaruit je moet scoren bij hockey? | De slagcirkel
+Hoe noem je iemand die lesgeeft op een basisschool? | Een leerkracht
+Hoeveel is 25% van 200? | 50
+Welk voltooid deelwoord hoort bij het werkwoord begeleiden? | Begeleid
+Hoe heet de persoon die bij hockey het doel verdedigt? | De keeper
+Wat is het meervoud van kind? | Kinderen
+Hoeveel minuten zitten er in anderhalf uur? | 90 minuten
+Hoe heet het als je de les aanpast aan het niveau van verschillende leerlingen? | Differentiatie
+Waarmee mag een hockeyspeelster de bal normaal gesproken spelen? | De stick
+Hoeveel is 7 × 8? | 56
+Welke taal spreken de meeste mensen in Brazilië? | Portugees
+Hoe heet de belangrijkste persoon die een hockeyteam tijdens een wedstrijd aanstuurt op het veld? | De aanvoerder
+Wat is het tegenovergestelde van het woord optimistisch? | Pessimistisch
+Hoe noem je feedback die leerlingen helpt om te begrijpen hoe ze hun werk kunnen verbeteren? | Constructieve feedback`,
   od:`Koen | Pedagogiek; Didactiek; Taal & spelling; Lesgeven; Onmogelijke rekentoets
 Koen | Pedagogiek; Didactiek; Taal & spelling; Lesgeven; Onmogelijke rekentoets
 Koen | Pedagogiek; Didactiek; Taal & spelling; Lesgeven; Onmogelijke rekentoets`,
@@ -238,7 +238,7 @@ Suzan & Freek: Vonk, Slapeloosheid, Zingen, Avond`,
   il:`Waar is dit? | Hans & Grietje; Boterlap; Malaga; Hockey; Kees; Ome Co; Albu`,
   fi:''
 };
-const KEY='slimste-dieuwke-v4';
+const KEY='slimste-dieuwke-v5';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.data)return s}catch(e){}return null}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{started:G.started,talk:G.talk,gal:G.gal,pass:G.pass,teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
 
