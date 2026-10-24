@@ -579,7 +579,7 @@ $('introLogo').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault()
 $('introNext').onclick=()=>{$('intro').hidden=true};
 $('logo').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();playTune2()}};
 function percOff(){perc.pause();perc.currentTime=0}
-function startClock(){if(G.running)return;{G.started=G.started||{};const rid=ROUNDS[G.round].id;if(!G.started[rid]){G.started[rid]=true;persist();renderStage()}}G.running=true;percOn();tick=setInterval(()=>{const t=G.teams[G.active];t.sec=Math.max(0,t.sec-1);if(t.sec===0){stopClock();if(ROUNDS[G.round].type==='talk')showDone();else showShot(t.name)}persist();renderTeams();if(ROUNDS[G.round].type==='talk')renderStage()},1000);renderTeams()}
+function startClock(){if(G.running)return;{G.started=G.started||{};const rid=ROUNDS[G.round].id;if(!G.started[rid]){G.started[rid]=true;persist();renderStage()}}G.running=true;percOn();tick=setInterval(()=>{const t=G.teams[G.active];t.sec=Math.max(0,t.sec-1);if(t.sec===0){stopClock();playOrkest();if(ROUNDS[G.round].type==='talk')showDone();else showShot(t.name)}persist();renderTeams();if(ROUNDS[G.round].type==='talk')renderStage()},1000);renderTeams()}
 function stopClock(){if(G.running)percOff();G.running=false;clearInterval(tick);tick=null;renderTeams()}
 $('clockBtn').onclick=()=>G.running?stopClock():startClock();
 $('uitlegBtn').onclick=()=>{stopClock();closeBig();G.started=G.started||{};G.started[ROUNDS[G.round].id]=false;persist();renderStage()};
