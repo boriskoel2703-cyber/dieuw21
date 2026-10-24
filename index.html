@@ -215,7 +215,7 @@ const DEFAULT={
   teams:'Team Dieuwke',
   start:60,
   r369:`Hoeveel speelsters staan er bij veldhockey per team tegelijk op het veld? | 11
-Hoe heet het gebied voor het doel waaruit je moet scoren bij hockey? | De slagcirkel
+Hoe heet het gebied voor het doel waaruit je moet scoren bij hockey? | De cirkel
 Hoe noem je iemand die lesgeeft op een basisschool? | Een leerkracht
 Hoeveel is 25% van 200? | 50
 Welk voltooid deelwoord hoort bij het werkwoord begeleiden? | Begeleid
@@ -238,7 +238,7 @@ Suzan & Freek: Vonk, Slapeloosheid, Zingen, Avond`,
   il:`Waar is dit? | Hans & Grietje; Boterlap; Malaga; Hockey; Kees; Ome Co; Albu`,
   fi:''
 };
-const KEY='slimste-dieuwke-v5';
+const KEY='slimste-dieuwke-v6';
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.data)return s}catch(e){}return null}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({data,game:{started:G.started,talk:G.talk,gal:G.gal,pass:G.pass,teams:G.teams,active:G.active,round:G.round,q:G.q,found:G.found,q369:G.q369,od:G.od}}))}catch(e){}}
 
